@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta content="initial-scale=1.0,user-scalable=no,width=device-width" name="viewport">
+		<meta content="ie=edge" http-equiv="X-UA-Compatible">
+		<style>
+			body {
+				background-color: rgb(30, 30, 30);
+				display: flex;
+				font-family: sans-serif;
+				margin: 0px;
+				padding: 0px;
+				user-select: none;
+			}
+			main {
+				display: flex;
+				justify-content: center;
+				width: 100%;
+			}
+			#user {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				width: 100%;
+			}
+			#user_list {
+				display: flex;
+				flex-direction: column;
+				list-style-type: none;
+				margin: 0px;
+				padding: 0px;
+				scrollbar-color: rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.3);
+				scrollbar-width: thin;
+			}
+			#user_list > li {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				border-top: 1px solid grey;
+				color: white;
+				display: flex;
+				flex-direction: row;
+				font-size: large;
+				position: relative;
+			}
+			#user_list > li > p {
+				flex: 1;
+				margin: 0;
+				padding: 10px;
+			}
+			#user_list > li > p:nth-child(2) { flex: 0; }
+			#user_list > li:first-child {
+				border-top: none;
+			}
+			#user_list > li[status="closed"] > p:nth-child(2) {
+				display: block;
+			}
+			#user_list > li[status="open"] > p:nth-child(2) {
+				display: none;
+			}
+			#user_list > li:hover,
+			#user_list > li > ul > li:hover {
+				background-image: linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30));
+				cursor: pointer;
+			}
+			#user_list > li > button {
+				background-color: transparent;
+				border: none;
+				color: white;
+				cursor: pointer;
+				float: right;
+				font-size: large;
+				font-weight: bold;
+			}
+			#user_list > li > form {
+				display: flex;
+				flex: 1;
+			}
+			#user_list > li > form > button {
+				background-image: linear-gradient(to right, pink, yellow);
+				border: none;
+				color: black;
+				cursor: pointer;
+				font-size: large;
+				font-weight: bold;
+				padding: 10px;
+			}
+			#user_list > li > form > input {
+				background-color: transparent;
+				border: none;
+				color: white;
+				flex: 1;
+				font-size: large;
+				padding: 10px;
+				outline: none;
+			}
+			#user_list > li > ul {
+				box-shadow: 0px 0px 5px black;
+				display: none;
+				flex-direction: column;
+				list-style-type: none;
+				padding: 0px;
+				position: absolute;
+				right: 10px;
+				top: 10px;
+				z-index: 1;
+			}
+			#user_list > li > ul.visible {
+				display: flex;
+			}
+			#user_list > li > ul > li {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				padding: 5px 20px 5px;
+				text-align: center;
+			}
+			.toolbar {
+				align-items: center;
+				background-color: black;
+				box-shadow: 0px 0px 5px black;
+				display: flex;
+				flex-direction: row;
+				justify-content: center;
+				padding: 0px;
+				width: 100%;
+			}
+			.toolbar > button {
+				background-color: transparent;
+				border: none;
+				display: flex;
+				flex: 1;
+				flex-direction: column;
+				font-size: medium;
+				font-weight: bold;
+				justify-content: flex-start;
+				margin: 0px 5px 0px;
+				padding: 15px;
+			}
+			.toolbar > button > i {
+				background-clip: text;
+				background-image: linear-gradient(to right, pink, yellow);
+				color: transparent;
+				cursor: pointer;
+				font-size: 30px;
+			}
+			.toolbar > button > small {
+				color: white;
+				margin-top: 5px;
+			}
+			.toolbar > button:hover {
+				background-color: rgba(255, 255, 255, 0.05);
+			}
+			.toolbar_wrapper {
+				background-image: linear-gradient(to right, pink, yellow);
+				bottom: 0px;
+				margin: 0px;
+				padding: 0px;
+				padding-top: 3px;
+				position: fixed;
+				width: 100%;
+			}
+			.top_form {
+				background-image: linear-gradient(to right, pink, yellow);
+				box-shadow: 0px 0px 5px black;
+				display: flex;
+				flex-direction: row;
+				padding: 0px;
+				position: sticky;
+				top: 0px;
+				z-index: 1;
+			}
+			.top_form > button {
+				background-image: linear-gradient(to right, pink, yellow);
+				border: none;
+				box-shadow: 0px 0px 5px black;
+				cursor: pointer;
+				font-size: large;
+				font-weight: bold;
+				padding: 10px 20px 10px;
+				z-index: 1;
+			}
+			.top_form > .tf_wrapper {
+				background-image: linear-gradient(to right, pink, yellow);
+				border-left: 1px solid black;	
+				border-right: 1px solid black;	
+				display: flex;
+				flex: 1;
+				padding: 5px;
+			}
+			.top_form > .tf_wrapper > input {
+				background-color: rgba(0, 0, 0, 0.7);
+				border: none;
+				caret-color: white;
+				color: white;
+				flex: 1;
+				font-size: large;
+				outline: none;
+				padding: 10px;
+			}
+			.top_form > .tf_wrapper > input::placeholder {
+				color: white;
+			}
+		</style>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+		<title>Accounting - admin</title>
+	</head>
+	<body>
+		<main>
+			<div id="user">
+				<form class="top_form" id="user_form">
+					<button id="search_btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+					<div class="tf_wrapper">
+						<input id="user_name" name="user_name" placeholder="username..." type="text">
+					</div>
+				</form>
+				<ul id="user_list"></ul>
+			</div>
+			<div class="toolbar_wrapper"><div class="toolbar">
+				<button onclick="window.location.href = '/'">
+					<i class="fa-solid fa-house"></i>
+					<small>Home</small>
+				</button>
+				<button onclick="export_data()">
+					<i class="fa-solid fa-file-export"></i>
+					<small>Export Data</small>
+				</button>
+				<input id="importer" style="display: none" type="file">
+				<button onclick="import_data()">
+					<i class="fa-solid fa-file-import"></i>
+					<small>Import Data</small>
+				</button>
+				<button onclick="
+					document.cookie = 'user_token=;';
+					window.location.href = '/auth';
+				">
+					<i class="fa-solid fa-sign-out"></i>
+					<small>Sign Out</small>
+				</button>
+			</div></div>
+		</main>
+		<script>
+			let user_form = document.getElementById("user_form");
+			let user_list = document.getElementById("user_list");
+			let user_item = (row) => {
+				return `<li id="${row.id}" status="${row.status}">
+					<p>${row.username}</p>
+					<p>(closed)</p>
+					<button onclick="event.stopPropagation();showOptions('${row.id}');">&vellip;</button>
+					<ul class="options" id="options${row.id}">
+						<li onclick="event.stopPropagation();delete_user('${row.id}')">delete</li>
+						<li onclick="event.stopPropagation();toggle_user(this, '${row.id}')">${(row.status == "closed") ? "open" : "close"}</li>
+					</ul>
+				</li>`;
+			};
+			let optionsVisible = 0;
+			let errorVisible = null;
+			let focused = null;
+			let showOptions = (id) => {
+				let options = document.getElementsByClassName("options");
+				for (option of options) {
+					if (option.classList.contains("visible")) {
+						option.classList.remove("visible");
+					}
+				}
+				document.getElementById(`options${id}`).classList.add("visible");
+				optionsVisible = id;
+			};
+			document.addEventListener("click", (event) => {
+				if (optionsVisible) {
+					let options = document.getElementById(`options${optionsVisible}`);
+					if (options) {
+						options.classList.remove("visible");
+						optionsVisible = 0;
+					}
+				}
+			});
+			let insearch = false;
+			user_form.addEventListener("submit", (event) => {
+				event.preventDefault();
+				let data = new FormData(user_form);
+				if (event.submitter.id == "search_btn") {
+					if (!insearch) { insearch = true; }
+					fetch_user(data.get("user_name"));
+				}
+			});
+			let fetch_user = (user_q=null) => {
+				return new Promise((resolve, reject) => {
+					user_list.innerHTML = "";
+					fetch(`/user${(user_q) ? `?user_q=${user_q}` : ""}`, {method: "GET"})
+					.then(response => response.json())
+					.then(data => {
+						for (row of data) {
+							user_list.insertAdjacentHTML("beforeend", user_item(row));
+						}
+						resolve(data);
+					})
+					.catch(error => {
+						reject(error);
+					});
+				});
+			};
+			fetch_user();
+			let delete_user = (id) => {
+				document.getElementById(`options${id}`).classList.remove("visible");
+				let data = new FormData();
+				data.append("id", id);
+				fetch("/user", {
+					method: "DELETE",
+					body: data
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else if (data.success) {
+						document.getElementById(`${id}`).remove();
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let toggle_user = (target, id) => {
+				document.getElementById(`options${id}`).classList.remove("visible");
+				let data = new FormData();
+				data.append("id", id);
+				data.append("purpose", "update_status");
+				fetch("/user", {
+					method: "PATCH",
+					body: data
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else if (data.success) {
+						document.getElementById(`${id}`).setAttribute("status", data.status);
+						target.innerHTML = (data.status == "closed") ? "open" : "close";
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let export_data = async () => {
+				await fetch(`/export`, {method: "GET"})
+				.then(response => response.blob())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else {
+						let url = URL.createObjectURL(data);
+						let a = document.createElement('a');
+						a.href = url;
+						a.download = `data.db`;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let import_data = async () => {
+				let importer = document.getElementById("importer");
+				let file = await new Promise(resolve => {
+					importer.onchange = () => resolve(importer.files[0]);
+					importer.click();
+				});
+				if (!file) return;
+				let data = new FormData();
+				data.append("data", file);
+				await fetch("/import", {
+					method: "POST",
+					body: data
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else {
+						fetch_user();
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+		</script>
+	</body>
+</html>

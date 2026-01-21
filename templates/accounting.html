@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta content="initial-scale=1.0,user-scalable=no,width=device-width" name="viewport">
+		<meta content="ie=edge" http-equiv="X-UA-Compatible">
+		<style>
+			body {
+				background-color: rgb(30, 30, 30);
+				display: flex;
+				font-family: sans-serif;
+				margin: 0px;
+				padding: 0px;
+				user-select: none;
+			}
+			#footer_wrapper {
+				bottom: 0px;
+				display: flex;
+				justify-content: center;
+				position: absolute;
+				width: 100%;
+			}
+			footer {
+				padding: 10px;
+				text-align: center;
+			}
+			footer > small {
+				color: white;
+			}
+			footer > small > a {
+				color: white;
+				font-weight: bold;
+			}
+			#fy {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				width: 100%;
+			}
+			#fy_list,
+			#ledger_list {
+				display: flex;
+				flex-direction: column;
+				list-style-type: none;
+				margin: 0px;
+				padding: 0px;
+				scrollbar-color: rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.3);
+				scrollbar-width: thin;
+			}
+			#fy_list > li,
+			#ledger_list > li {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				border-top: 1px solid grey;
+				color: white;
+				display: flex;
+				flex-direction: row;
+				font-size: large;
+				position: relative;
+			}
+			#fy_list > li > p,
+			#ledger_list > li > p {
+				flex: 1;
+				margin: 0;
+				padding: 10px;
+			}
+			#fy_list > li > p:nth-child(2) { flex: 0; }
+			#fy_list > li:first-child,
+			#ledger_list > li:first-child {
+				border-top: none;
+			}
+			#fy_list > li[status="closed"] > p:nth-child(2) {
+				display: block;
+			}
+			#fy_list > li[status="open"] > p:nth-child(2) {
+				display: none;
+			}
+			#fy_list > li:hover,
+			#fy_list > li > ul > li:hover,
+			#ledger_list > li:hover {
+				background-image: linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30));
+				cursor: pointer;
+			}
+			#fy_list > li > button {
+				background-color: transparent;
+				border: none;
+				color: white;
+				cursor: pointer;
+				float: right;
+				font-size: large;
+				font-weight: bold;
+			}
+			#fy_list > li > form {
+				display: flex;
+				flex: 1;
+			}
+			#fy_list > li > form > button {
+				background-image: linear-gradient(to right, pink, yellow);
+				border: none;
+				color: black;
+				cursor: pointer;
+				font-size: large;
+				font-weight: bold;
+				padding: 10px;
+			}
+			#fy_list > li > form > input {
+				background-color: transparent;
+				border: none;
+				color: white;
+				flex: 1;
+				font-size: large;
+				padding: 10px;
+				outline: none;
+			}
+			#fy_list > li > ul {
+				box-shadow: 0px 0px 5px black;
+				display: none;
+				flex-direction: column;
+				list-style-type: none;
+				padding: 0px;
+				position: absolute;
+				right: 10px;
+				top: 10px;
+				z-index: 1;
+			}
+			#fy_list > li > ul.visible {
+				display: flex;
+			}
+			#fy_list > li > ul > li {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				padding: 5px 20px 5px;
+				text-align: center;
+			}
+			#header_wrapper {
+				background-image: linear-gradient(to right, pink, yellow);
+				box-shadow: 0px 0px 5px black;
+				height: 75px;
+				margin: 0px;
+				padding: 0px;
+				padding-bottom: 3px;
+				position: fixed;
+				width: 100%;
+				z-index: 2;
+			}
+			header {
+				align-items: center;
+				background-color: black;
+				display: flex;
+				flex-direction: row;
+				margin: 0px;
+				padding: 0px;
+			}
+			header > button {	
+				background-color: transparent;
+				border: none;
+				cursor: pointer;
+				padding-right: 10px;
+			}
+			header > button > i {
+				background-clip: text;
+				background-image: linear-gradient(to right, pink, yellow);
+				color: transparent;
+				font-size: 30px;
+			}
+			header > button:first-of-type {
+				margin-left: auto;
+			}
+			header > h2,
+			nav > h2 {
+				background-clip: text;
+				background-image: linear-gradient(to right, pink, yellow);
+				color: transparent;
+				font-family: cursive;
+				padding-left: 10px;
+			}
+			header > h2:hover {
+				cursor: pointer;
+			}
+			header > #hamburger {
+				display: none;
+			}
+			#journal,
+			#ledger {
+				display: none;
+				margin: 0px;
+				padding: 0px;
+				width: 100%;
+			}
+			#journal_form > button[type="button"] {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				border: 1px solid grey;
+				border-image: linear-gradient(to right, pink, yellow) 1;
+				box-shadow: 0px 0px 5px black;
+				color: white;
+				cursor: pointer;
+				left: 0px;
+				position: sticky;
+			}
+			#ledger {
+				display: none;
+			}
+			#ledger_account {
+				display: none;
+			}
+			main {
+				display: flex;
+				justify-content: center;
+				margin-top: 80px;
+				width: 100%;
+			}
+			#nav_wrapper {
+				background-image: linear-gradient(to bottom, pink, yellow);
+				box-shadow: 0px 0px 5px black;
+				height: 100%;
+				margin: 0px;
+				overflow: hidden;
+				padding: 0px;
+				padding-left: 3px;
+				position: fixed;
+				right: 0px;
+				transition: all 1s ease;
+				transform: translateX(120%);
+				width: 40%;
+				z-index: 3;
+			}
+			nav {
+				background-color: black;
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				margin: 0px;
+				padding: 0px;
+				text-align: center;
+				width: 100%;
+			}
+			nav > ul {
+				list-style-type: none;
+				margin: 0px;
+				padding: 0px;
+			}
+			nav > ul > li {
+				color: white;
+				font-weight: bold;
+				padding: 10px 40px 10px;
+				text-align: center;
+			}
+			nav > ul > li:hover {
+				background-color: rgb(30, 30, 30);
+				cursor: pointer;
+			}
+			nav > ul > li.selected {
+				background-color: rgb(50, 50, 50);
+			}
+			table {
+				background-image: linear-gradient(to right, pink, yellow);
+				border-collapse: separate;
+				border-spacing: 1px;
+				table-layout: fixed;
+				width: 100%;
+				word-wrap: break-word;
+			}
+			table > tbody > tr > td {
+				background-color: rgb(30, 30, 30);
+				border: 1px solid transparent;
+				cursor: pointer;
+				padding: 0px;
+				position: relative;
+			}
+			table > tbody > tr > td > input,
+			table > tbody > tr > td > p {
+				background-color: transparent;
+				border: none;
+				color: white;
+				box-sizing: border-box;
+				font-size: large;
+				margin: 0px;
+				outline: none;
+				padding: 3px;
+				width: 100%;
+			}
+			table > tbody > tr > td > input:hover {
+				background-color: rgba(255, 255, 255, 0.05);
+			}
+			table > tbody > tr > td > input:focus {
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+			table > tbody > tr > td > small {
+				background-color: white;
+				border-radius: 200px;
+				bottom: 100%;
+				box-shadow: 0px 0px 5px black;
+				color: black;
+				cursor: default;
+				opacity: 0.0;
+				padding: 10px 0px;
+				position: absolute;
+				text-align: center;
+				transition: 1s linear;
+				width: 100%;
+				z-index: 1;
+			}
+			table > tbody > tr > td > small::after {
+				border-color: white transparent transparent transparent;
+				border-style: solid;
+				border-width: 5px;
+				content: "";
+				left: 50%;
+				margin-left: -5px;
+				position: absolute;
+				top: 100%;
+			}
+			table > thead > tr {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				color: white;
+				font-size: large;
+				overflow: hidden;
+				padding: 10px;
+				position: relative;
+			}
+			table > thead > tr > th {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				font-family: cursive;
+				font-size: large;
+				padding: 10px;
+				position: relative;
+			}
+			table > thead > tr > th > p {
+				background-clip: text;
+				background-image: linear-gradient(to right, pink, yellow);
+				color: transparent;
+				margin: 0px;
+				padding: 0px;
+			}
+			.table_wrapper {
+				background-color: rgb(30, 30, 30);
+				margin: 0px;
+				padding: 0px;
+				position: relative;
+				width: 100%;
+			}
+			.toolbar {
+				align-items: center;
+				background-color: black;
+				box-shadow: 0px 0px 5px black;
+				display: flex;
+				flex-direction: row;
+				justify-content: center;
+				padding: 0px;
+				width: 100%;
+			}
+			.toolbar > button {
+				background-color: transparent;
+				border: none;
+				display: flex;
+				flex: 1;
+				flex-direction: column;
+				font-size: medium;
+				font-weight: bold;
+				justify-content: flex-start;
+				margin: 0px 5px 0px;
+				padding: 15px;
+			}
+			.toolbar > button > i {
+				background-clip: text;
+				background-image: linear-gradient(to right, pink, yellow);
+				color: transparent;
+				cursor: pointer;
+				font-size: 30px;
+			}
+			.toolbar > button > small {
+				color: white;
+				margin-top: 5px;
+			}
+			.toolbar > button:hover {
+				background-color: rgba(255, 255, 255, 0.05);
+			}
+			.toolbar_wrapper {
+				background-image: linear-gradient(to right, pink, yellow);
+				bottom: 0px;
+				margin: 0px;
+				padding: 0px;
+				padding-top: 3px;
+				position: fixed;
+				width: 100%;
+			}
+			.top_form {
+				background-image: linear-gradient(to right, pink, yellow);
+				box-shadow: 0px 0px 5px black;
+				display: flex;
+				flex-direction: row;
+				padding: 0px;
+				position: sticky;
+				top: 80px;
+				z-index: 1;
+			}
+			.top_form > button {
+				background-image: linear-gradient(to right, pink, yellow);
+				border: none;
+				box-shadow: 0px 0px 5px black;
+				cursor: pointer;
+				font-size: large;
+				font-weight: bold;
+				padding: 10px 20px 10px;
+				z-index: 1;
+			}
+			.top_form > .tf_wrapper {
+				background-image: linear-gradient(to right, pink, yellow);
+				border-left: 1px solid black;	
+				border-right: 1px solid black;	
+				display: flex;
+				flex: 1;
+				padding: 5px;
+			}
+			.top_form > .tf_wrapper > input {
+				background-color: rgba(0, 0, 0, 0.7);
+				border: none;
+				caret-color: white;
+				color: white;
+				flex: 1;
+				font-size: large;
+				outline: none;
+				padding: 10px;
+			}
+			.top_form > .tf_wrapper > input::placeholder {
+				color: white;
+			}
+		</style>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+		<title>Accounting</title>
+	</head>
+	<body>
+		<div id="header_wrapper">
+			<header>
+				<h2 onclick="show_fy()">Accounting</h2>
+				<button onclick="
+					document.cookie = 'user_token=;';
+					window.location.href = '/auth';
+				"><i class="fa-solid fa-sign-out"></i></button>
+				<button id="hamburger"><i class="fa-solid fa-bars"></i></button>
+			</header>
+		</div>
+		<div id="nav_wrapper">
+			<nav>
+				<h2>Menu</h2>
+				<ul id="nav_list">
+					<li onclick="
+						ledger.style.display='none';
+						journal.style.display='block';
+					">Journal</li>
+					<li onclick="
+						journal.style.display='none';
+						ledger.style.display='block';
+					">Ledger</li>
+				</ul>
+			</nav>
+			<div id="footer_wrapper">
+				<footer>
+					<small>A project by <a href="https://www.github.com/vedmishra28102006">vedmishra28102006</a></small>
+				</footer>
+			</div>
+		</div>
+		<main>
+			<div id="fy">
+				<form class="top_form" id="fy_form">
+					<button id="search_btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+					<div class="tf_wrapper">
+						<input id="fy_name" name="fy_name" placeholder="financial year..." type="text">
+					</div>
+					<button id="add_btn" type="submit"><i class="fa-solid fa-plus"></i></button>
+				</form>
+				<ul id="fy_list"></ul>
+			</div>
+			<div id="journal">
+				<form class="table_wrapper" id="journal_form">
+					<table>
+						<thead><tr>
+							<th><p>Date</p></th>
+							<th><p>A/c Debited</p></th>
+							<th><p>A/c Credited</p></th>
+							<th><p>Amount</p></th>
+							<th><p>Description</p></th>
+						</tr></thead>
+						<tbody id="journal_rows"></tbody>
+						<tbody id="journal_total"></tbody>
+					</table>
+				</form>
+				<div class="toolbar_wrapper"><div class="toolbar">
+					<button onclick="show_fy()">
+						<i class="fa-solid fa-house"></i>
+						<small>Home</small>
+					</button>
+					<button onclick="delete_row(event)">
+						<i class="fa-solid fa-trash"></i>
+						<small>Delete Row</small>
+					</button>
+					<button onclick="if (status == 'closed') { return; }; add_row()">
+						<i class="fa-solid fa-plus"></i>
+						<small>Add Row</small>
+					</button>
+					<button onclick="submit_journal()">
+						<i class="fa-solid fa-floppy-disk"></i>
+						<small>Save Book</small>
+					</button>
+					<button onclick="export_journal()">
+						<i class="fa-solid fa-file-export"></i>
+						<small>Export Book</small>
+					</button>
+				</div></div>
+			</div>
+			<div id="ledger">
+				<div id="ledger_menu">
+					<form class="top_form" id="ledger_search">
+						<div class="tf_wrapper">
+							<input id="ledger_q" name="ledger_q" placeholder="search account..." type="text">
+						</div>
+						<button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+					</form>
+					<ul id="ledger_list"></ul>
+					<div class="toolbar_wrapper"><div class="toolbar">
+						<button onclick="show_fy()">
+							<i class="fa-solid fa-house"></i>
+							<small>Home</small>
+						</button>
+						<button onclick="export_ledgers()">
+							<i class="fa-solid fa-file-export"></i>
+							<small>Export All</small>
+						</button>
+					</div></div>
+				</div>
+				<div id="ledger_account">
+					<div class="table_wrapper" id="ledger_table">
+						<table>
+							<thead>
+								<tr>
+									<th colspan="3"><p>Dr</p></th>
+									<th colspan="3"><p>Cr</p></th>
+								</tr>
+								<tr>
+									<th><p>Date</p></th>
+									<th><p>Particulars</p></th>
+									<th><p>Amount</p></th>
+									<th><p>Date</p></th>
+									<th><p>Particulars</p></th>
+									<th><p>Amount</p></th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+					<div class="toolbar_wrapper"><div class="toolbar">
+						<button onclick="show_fy()">
+							<i class="fa-solid fa-house"></i>
+							<small>Home</small>
+						</button>
+						<button onclick="export_ledger()">
+							<i class="fa-solid fa-file-export"></i>
+							<small>Export Book</small>
+						</button>
+						<button onclick="
+							ledger_account.style.display='none';
+							ledger_menu.style.display='block';
+							ledger_table.setAttribute('account', '');
+						">
+							<i class="fa-solid fa-arrow-left"></i>
+							<small>Back</small>
+						</button>
+					</div></div>
+				</div>
+			</div>
+		</main>
+		<script>
+			let user_status = null;
+			fetch("/status", {method: "GET"})
+			.then(response => response.json())
+			.then(data => {
+				user_status = data.status;
+			})
+			.catch(error => { alert(error); });
+			let hamburger = document.getElementById("hamburger");
+			let nav_wrapper = document.getElementById("nav_wrapper");
+			hamburger.addEventListener("click", (event) => {
+				event.stopPropagation();
+				nav_wrapper.style.transform = "translateX(0px)";
+			});
+			let nav_list = document.getElementById("nav_list");
+			for (let i=0; i < nav_list.children.length; i++) {
+				nav_list.children[i].addEventListener("click", () => {
+					for (let j=0; j < nav_list.children.length; j++) {
+						nav_list.children[j].classList.remove("selected");
+					}
+					nav_list.children[i].classList.add("selected");
+				});
+			}
+			let fy_form = document.getElementById("fy_form");
+			let fy_list = document.getElementById("fy_list");
+			let fy_item = (row) => {
+				return `<li id="${row.id}" onclick="show_journal('${row.id}')" status="${row.status}">
+					<p>${row.name}</p>
+					<p>(closed)</p>
+					<button onclick="event.stopPropagation();showOptions('${row.id}');">&vellip;</button>
+					<ul class="options" id="options${row.id}">
+						<li onclick="event.stopPropagation();show_journal('${row.id}')">view</li>
+						<li onclick="event.stopPropagation();edit_fy('${row.id}')">edit</li>
+						<li onclick="event.stopPropagation();delete_fy('${row.id}')">delete</li>
+						<li onclick="event.stopPropagation();toggle_fy(this, '${row.id}')">${(row.status == "closed") ? "open" : "close"}</li>
+					</ul>
+				</li>`;
+			};
+			let optionsVisible = 0;
+			let errorVisible = null;
+			let focused = null;
+			let showOptions = (id) => {
+				let options = document.getElementsByClassName("options");
+				for (option of options) {
+					if (option.classList.contains("visible")) {
+						option.classList.remove("visible");
+					}
+				}
+				document.getElementById(`options${id}`).classList.add("visible");
+				optionsVisible = id;
+			};
+			document.addEventListener("click", (event) => {
+				if (optionsVisible) {
+					let options = document.getElementById(`options${optionsVisible}`);
+					if (options) {
+						options.classList.remove("visible");
+						optionsVisible = 0;
+					}
+				}
+				if (nav_wrapper.style.transform == "translateX(0px)") {
+					nav_wrapper.style.transform = "translateX(120%)";
+				}
+				if (errorVisible) {
+					for (e of errorVisible) {
+						let field = journal_form.querySelectorAll(`input[name="${e.field}"]`)[e.index];
+						field.previousElementSibling.style.opacity = "0.0";
+							setTimeout(() => {
+								field.previousElementSibling.innerText = "";
+							}, 1000);
+					}
+					errorVisible = null;
+				}
+				if (focused && event.target.tagName.toLowerCase() != "input") {
+					focused = null;
+				}
+			});
+			let insearch = false;
+			fy_form.addEventListener("submit", (event) => {
+				event.preventDefault();
+				if (user_status == "closed") {
+					alert("Your account has been closed");
+					return;
+				}
+				let data = new FormData(fy_form);
+				if (event.submitter.id == "add_btn") {
+					fetch("/fy", {
+						method: "POST",
+						body: data
+					}).then(response => response.json())
+					.then(data => {
+						if (data.error && data.id) {
+							if (data.id == -1) {
+								alert(data.error);
+								return;
+							}
+							let fy = document.getElementById(`${data.id}`);
+							let temp_func = () => {
+								if (!fy) { fy = document.getElementById(`${data.id}`); }
+								fy.scrollIntoView({
+									behavior: "smooth",
+									block: "center"
+								});
+								fy.style.backgroundImage = "linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30))";
+								setTimeout(() => {
+									fy.style.backgroundImage = "linear-gradient(to right, rgb(30, 30, 30), black)";
+								}, 500);
+							};
+							if (!fy) {
+								fetch_fy().then(temp_func);
+								insearch = false;
+							} else {
+								temp_func();
+							}
+						} else if (data.success) {
+							let temp_func = () => {
+								fy_form.querySelector("input").value = "";
+								if (!insearch) {
+									fy_list.insertAdjacentHTML("beforeend", fy_item(data.row));
+								}
+								fy_list.children[fy_list.children.length-1].scrollIntoView({
+									behavior: "smooth",
+									block: "center"
+								});
+								fy_list.children[fy_list.children.length-1].style.backgroundImage = "linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30))";
+								setTimeout(() => {
+									fy_list.children[fy_list.children.length-1].style.backgroundImage = "linear-gradient(to right, rgb(30, 30, 30), black)";
+								}, 500);
+							};
+							if (insearch) {
+								fetch_fy().then(() =>{
+									insearch = true;
+									temp_func();
+								});
+							} else {
+								temp_func();
+							}
+						}
+					})
+					.catch(error => {alert(error);});
+				}
+				if (event.submitter.id == "search_btn") {
+					if (!insearch) { insearch = true; }
+					fetch_fy(data.get("fy_name"));
+				}
+			});
+			let fetch_fy = (fy_q=null) => {
+				return new Promise((resolve, reject) => {
+					fy_list.innerHTML = "";
+					fetch(`/fy${(fy_q) ? `?fy_q=${fy_q}` : ""}`, {method: "GET"})
+					.then(response => response.json())
+					.then(data => {
+						for (row of data) {
+							fy_list.insertAdjacentHTML("beforeend", fy_item(row));
+						}
+						resolve(data);
+					})
+					.catch(error => {
+						reject(error);
+					});
+				});
+			};
+			fetch_fy();
+			let edit_fy = (id) => {
+				if (user_status == "closed") {
+					alert("Your account has been closed");
+					return;
+				}
+				document.getElementById(`options${id}`).classList.remove("visible");
+				let fy = document.getElementById(`${id}`);
+				fy.innerHTML = `
+					<form onsubmit="event.preventDefault();update_fy('${id}')">
+						<input id="input${id}" type="text" value="${fy.children[0].innerText}">
+						<button type="submit">ok</button>
+					</form>
+				`;
+				fy.onclick = null;
+				document.getElementById(`input${id}`).focus();
+			};
+			let update_fy = (id) => {
+				if (user_status == "closed") {
+					alert("Your account has been closed");
+					return;
+				}
+				let fy_name = document.getElementById(`input${id}`).value;
+				let data = new FormData();
+				data.append("id", id);
+				data.append("fy_name", fy_name);
+				data.append("purpose", "update_text");
+				fetch("/fy", {
+					method: "PATCH",
+					body: data
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error && data.id) {
+						if (data.id == -1) {
+							alert(data.error);
+							return;
+						}
+						let fy = document.getElementById(`${data.id}`);
+						let temp_func = () => {
+							if (!fy) { fy = document.getElementById(`${data.id}`); }
+							fy.scrollIntoView({
+								behavior: "smooth",
+								block: "center"
+							});
+							fy.style.backgroundImage = "linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30))";
+							setTimeout(() => {
+								fy.style.backgroundImage = "linear-gradient(to right, rgb(30, 30, 30), black)";
+							}, 500);
+							setTimeout(() => {
+								document.getElementById(`${id}`).scrollIntoView({
+									behavior: "smooth",
+									block: "center"
+								});
+							}, 500);
+							document.getElementById(`input${id}`).focus();
+						};
+						if (!fy) {
+							fetch_fy().then(() => {
+								edit_fy(id);
+								document.getElementById(`input${id}`).value = fy_name;
+								temp_func();
+							});
+							insearch = false;
+						} else {
+							temp_func();
+						}	
+					} else if (data.success) {
+						let fy = document.getElementById(`${id}`);
+						fy.outerHTML = fy_item({
+							id: id,
+							name: fy_name,
+							status: fy.getAttribute("status")
+						});
+						fy.onclick = (event) => {
+							event.stopPropagation();
+							show_journal(`${id}`);
+						};
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let delete_fy = (id) => {
+				if (user_status == "closed") {
+					alert("Your account has been closed");
+					return;
+				}
+				document.getElementById(`options${id}`).classList.remove("visible");
+				let data = new FormData();
+				data.append("id", id);
+				fetch("/fy", {
+					method: "DELETE",
+					body: data
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else if (data.success) {
+						document.getElementById(`${id}`).remove();
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let toggle_fy = (target, id) => {
+				if (user_status == "closed") {
+					alert("Your account has been closed");
+					return;
+				}
+				document.getElementById(`options${id}`).classList.remove("visible");
+				let data = new FormData();
+				data.append("id", id);
+				data.append("purpose", "update_status");
+				fetch("/fy", {
+					method: "PATCH",
+					body: data
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else if (data.success) {
+						document.getElementById(`${id}`).setAttribute("status", data.status);
+						target.innerHTML = (data.status == "closed") ? "open" : "close";
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let journal = document.getElementById("journal");
+			let journal_form = document.getElementById("journal_form");
+			let status = null;
+			let journal_row = (row) => {
+				return `<tr>
+					<td onclick="focused=this">
+						<small class="error"></small>
+						${(status == "closed" || user_status == "closed")
+							? `<p>${(row) ? row.date : ''}</p>`
+							: `<input name="date" type="date" value="${(row) ? row.date : ''}">`
+						}
+					</td>
+					<td onclick="focused=this">
+						<small class="error"></small>
+						${(status == "closed" || user_status == "closed")
+							? `<p>${(row) ? row.ac_debited : ''}</p>`
+							: `<input name="ac_debited" type="text" value="${(row) ? row.ac_debited : ''}">`
+						}
+					</td>
+					<td onclick="focused=this">
+						<small class="error"></small>
+						${(status == "closed" || user_status == "closed")
+							? `<p>${(row) ? row.ac_credited : ''}</p>`
+							: `<input name="ac_credited" type="text" value="${(row) ? row.ac_credited : ''}">`
+						}
+					</td>
+					<td onclick="focused=this">
+						<small class="error"></small>
+						${(status == "closed" || user_status == "closed")
+							? `<p>${(row) ? row.amount : ''}</p>`
+							: `<input name="amount" oninput="update_total()" type="number" value="${(row) ? row.amount : ''}">`
+						}
+					</td>
+					<td onclick="focused=this">
+						<small class="error"></small>
+						${(status == "closed" || user_status == "closed")
+							? `<p>${(row) ? row.date : ''}</p>`
+							: `<input name="description" type="text" value="${(row) ? row.description : ''}">`
+						}
+					</td>
+				</tr>`;
+			};
+			let journal_rows = document.getElementById("journal_rows");
+			let journal_total = document.getElementById("journal_total");
+			let add_row = () => {
+				if (user_status == "closed") {
+					return;
+				}
+				journal_rows.insertAdjacentHTML("beforeend", journal_row());
+				journal_rows.children[journal_rows.children.length-1].scrollIntoView({
+					behavior: "smooth",
+					block: "center"
+				});
+			};
+			let delete_row = () => {
+				if (focused) {
+					if (status != "closed" && user_status != "closed") {
+						focused.parentNode.remove();
+						update_total();
+					}
+					focused = null;
+				}
+			};
+			let show_journal = (id) => {
+				fy.style.display = "none";
+				hamburger.style.display = "block";
+				journal.style.display = "block";
+				journal_form.setAttribute("fy_id", `${id}`);
+				for (li of nav_list.children) {
+					if (li.classList.contains("selected")) {
+						nav_list.children[1].classList.remove("selected");
+					}
+				}
+				nav_list.children[0].classList.add("selected");
+				journal_rows.innerHTML = "";
+				fetch(`/journal/${id}`, {method: "GET"})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else {
+						status = document.getElementById(`${id}`).getAttribute("status");
+						for (row of data.rows) {
+							journal_rows.insertAdjacentHTML("beforeend", journal_row(row));
+						}
+						journal_total.innerHTML = `<tr>
+							<td><p></p></td>
+							<td colspan="2"><p>Total</p></td>
+							<td><p id="total_amount">${data.total}</p></td>
+							<td><p></p></td>
+						</tr>`;
+						journal_form.setAttribute("fy_name", data.fy_name);
+					}
+				})
+				.catch(error => {alert(error);});
+				fetch_ledger_menu();
+			};
+			let submit_journal = () => { return new Promise((resolve, reject) => {
+				if (status == "closed" || user_status == "closed") { return resolve(false); }
+				let dates = journal_form.querySelectorAll("input[name='date']");
+				let acs_debited = journal_form.querySelectorAll("input[name='ac_debited']");
+				let acs_credited = journal_form.querySelectorAll("input[name='ac_credited']");
+				let amounts = journal_form.querySelectorAll("input[name='amount']");
+				let descriptions = journal_form.querySelectorAll("input[name='description']");
+				let data = [];
+				for (let i=0; i < amounts.length; i++) {
+					data.push({});
+					data[i].date = dates[i].value;
+					data[i].ac_debited = acs_debited[i].value;
+					data[i].ac_credited = acs_credited[i].value;
+					data[i].amount = amounts[i].value;
+					data[i].description = descriptions[i].value;
+				}
+				fetch(`/journal/${journal_form.getAttribute("fy_id")}`, {
+					method: "POST",
+					body: JSON.stringify(data),
+					headers: {"Content-Type": "application/json"}
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error || (data[0] && data[0].error)) {
+						errorVisible = [];
+						if (data.error) data = [data];
+						for (d of data) {
+							let field = journal_form.querySelectorAll(`input[name="${d.field}"]`)[d.index];
+							field.previousElementSibling.style.opacity = "1.0";
+							field.previousElementSibling.innerText = d.error;
+							errorVisible.push(d);
+						}
+						return resolve(false);
+					} else if (data.success) {
+						fetch_ledger_menu();
+						if (ledger_table.getAttribute('account')) {
+							fetch_ledger_account(ledger_table.getAttribute('account'));
+						}
+						alert("saved");
+						return resolve(true);
+					}
+				})
+				.catch(error => {
+					reject(error);
+				});
+			});};
+			let export_journal = async () => {
+				let submission = (status == "closed" || user_status == "closed") ? "skip" : await submit_journal();
+				if (!journal_rows.children.length || !submission) {
+					return;
+				}
+				await fetch(`/journal/${journal_form.getAttribute("fy_id")}`, {method: "GET"})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else {
+						let csv = "Date,Particulars,Debit,Credit\r\n";
+						for (row of data.rows) {
+							csv += `${row.date},${row.ac_debited} A/c Dr.,${row.amount},\r\n,    To ${row.ac_credited} A/c,,${row.amount}\r\n,(${row.description}),,\r\n`;
+						}
+						csv += `\r\n,,${data.total},${data.total}`;
+						let blob = new Blob([csv], {type: "text/csv"});
+						let url = URL.createObjectURL(blob);
+						let a = document.createElement('a');
+						a.href = url;
+						a.download = `${journal_form.getAttribute("fy_name")}_journal`;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let update_total = () => {
+				let total = 0;
+				let amounts = journal_form.querySelectorAll("input[name='amount']");
+				for (amount of amounts) {
+					total += parseFloat(amount.value);
+				}
+				document.getElementById("total_amount").innerText = `${total}`;
+			};
+			let ledger = document.getElementById("ledger");
+			let ledger_menu = document.getElementById("ledger_menu");
+			let ledger_list = document.getElementById("ledger_list");
+			let ledger_account = document.getElementById("ledger_account");
+			let ledger_search = document.getElementById("ledger_search");
+			let fetch_ledger_menu = (ledger_q=null) => {
+				ledger_list.innerHTML = "";
+				ledger_search.querySelector("input").value = "";
+				fetch(`ledger/${journal_form.getAttribute("fy_id")+ ((ledger_q) ? `?ledger_q=${ledger_q}` : "")}`, {method: "GET"})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else {
+						for (row of data) {
+							ledger_list.insertAdjacentHTML("beforeend", `<li onclick="
+								ledger_menu.style.display='none';
+								ledger_account.style.display='block';
+								fetch_ledger_account('${row.account}');
+							"><p>${row.account}</p></li>`);
+						}
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			ledger_search.addEventListener("submit", async (event) => {
+				event.preventDefault();
+				let data = new FormData(ledger_search);
+				fetch_ledger_menu(data.get("ledger_q"));
+			});
+			let fetch_ledger_account = (account) => {
+				ledger_table.querySelector("tbody").innerHTML = "";
+				fetch(`ledger/${journal_form.getAttribute("fy_id")}?account=${account}`, {method: "GET"})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						if (data.error == "invalid account") {
+							ledger_account.style.display = "none";
+							ledger_menu.style.display = "block";
+							ledger_table.setAttribute("account", "");
+						} else {
+							alert(data.error);
+						}
+					} else {
+						ledger_table.setAttribute("account", account);
+						if (!data.debit_side) {
+							data.debit_side = [];
+						}
+						if (!data.credit_side) {
+							data.credit_side = [];
+						}
+						let tbody = ledger_table.querySelector("tbody");
+						for (let i=0; i < Math.max(data.debit_side.length, data.credit_side.length); i++) {
+							tbody.insertAdjacentHTML("beforeend", `<tr>
+								<td onclick="${data.debit_side[i] ? `refer_journal(${data.debit_side[i].id})` : ""}"><p>${data.debit_side[i] ? data.debit_side[i].date : ""}</p></td>
+								<td onclick="${data.debit_side[i] ? `refer_journal(${data.debit_side[i].id})` : ""}"><p>${data.debit_side[i] ? data.debit_side[i].account : ""}</p></td>
+								<td onclick="${data.debit_side[i] ? `refer_journal(${data.debit_side[i].id})` : ""}"><p>${data.debit_side[i] ? data.debit_side[i].amount : ""}</p></td>
+								<td onclick="${data.credit_side[i] ? `refer_journal(${data.credit_side[i].id})` : ""}"><p>${data.credit_side[i] ? data.credit_side[i].date : ""}</p></td>
+								<td onclick="${data.credit_side[i] ? `refer_journal(${data.credit_side[i].id})` : ""}"><p>${data.credit_side[i] ? data.credit_side[i].account : ""}</p></td>
+								<td onclick="${data.credit_side[i] ? `refer_journal(${data.credit_side[i].id})` : ""}"><p>${data.credit_side[i] ? data.credit_side[i].amount : ""}</p></td>
+							</tr>`);
+						}
+						if (data.balance_side) {
+							let replacee = "<td><p></p></td>".repeat(3);
+							replacee += `${data.balance_side == "debit_side" ? "<td>" : "</tr>"}`;
+							let balance_row = `
+								<td><p></p></td>
+								<td><p>Balance c/d</p></td>
+								<td><p>${data.balance}</p></td>
+							`;
+							tbody.innerHTML = tbody.innerHTML.replaceAll("\t", "").replaceAll("\r", "").replaceAll("\n", "");
+							if (tbody.innerHTML.includes(replacee)) {
+								balance_row += data.balance_side == "debit_side" ? "<td>" : "</tr>";
+								tbody.innerHTML = tbody.innerHTML.replace(replacee, balance_row);
+							} else {
+								let empties = "<td><p></p></td>".repeat(3);
+								balance_row = data.balance_side == "debit_side" ? balance_row + empties : empties + balance_row;
+								balance_row = `<tr>${balance_row}</tr>`;
+								tbody.insertAdjacentHTML("beforeend", balance_row);
+							}
+						}
+						let empty_row = "<tr>"+"<td><p></p></td>".repeat(6)+"</tr>";
+						tbody.insertAdjacentHTML("beforeend", empty_row+"<tr>"+`
+							<td><p></p></td>
+							<td><p></p></td>
+							<td><p>${data.total}</p></td>
+						`.repeat(2)+"</tr>");
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let refer_journal = (id) => {
+				if (!id) { return; }
+				nav_list.children[0].click();
+				journal_rows.children[id-1].scrollIntoView({
+					behavior: "smooth",
+					block: "center"
+				});
+				for (let row of journal_rows.children[id-1].children) {
+					row.style.backgroundColor = "rgb(50, 50, 50)";
+				}
+				setTimeout(() => {
+					for (let row of journal_rows.children[id-1].children) {
+						row.style.backgroundColor = "rgb(30, 30, 30)";
+					}
+				}, 500);
+			};
+			let export_ledger = () => {
+				let csv = "Dr,,,,,Cr\r\nDate,Particulars,Amount,Date,Particulars,Amount\r\n";
+				let trs = ledger_table.querySelector("tbody").querySelectorAll("tr");
+				for (tr of trs) {
+					var ps = tr.querySelectorAll("p");
+					if (ps) {
+						csv += `${ps[0].innerText},${ps[1].innerText},${ps[2].innerText},${ps[3].innerText},${ps[4].innerText},${ps[5].innerText}\r\n`;
+					}
+				}
+				let blob = new Blob([csv], {type: "text/csv"});
+				let url = URL.createObjectURL(blob);
+				let a = document.createElement('a');
+				a.href = url;
+				a.download = `${journal_form.getAttribute("fy_name")}_${ledger_table.getAttribute("account")}_account`;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+			};
+			let show_fy = () => {
+				journal.style.display = "none";
+				ledger.style.display = "none";
+				ledger_menu.style.display = "block";
+				ledger_account.style.display = "none";
+				hamburger.style.display = "none";
+				fy.style.display = "flex";
+			};
+			let export_ledgers = async () => {
+				let zip = new JSZip();
+				let requests = [];
+				if (!ledger_list.children.length) {
+					return;
+				}
+				for (let li of ledger_list.children) {
+					let request = fetch(`ledger/${journal_form.getAttribute("fy_id")}?account=${li.innerText}`, {method: "GET"})
+					.then(response => response.json())
+					.then(data => {
+						if (data.error) {
+							alert(data.error);
+						} else {
+							if (!data.debit_side) {
+								data.debit_side = [];
+							}
+							if (!data.credit_side) {
+								data.credit_side = [];
+							}
+							let csv = "";
+							for (let i=0; i < Math.max(data.debit_side.length, data.credit_side.length); i++) {
+								csv += `${data.debit_side[i] ? data.debit_side[i].date : ""},`
+									+ `${data.debit_side[i] ? data.debit_side[i].account : ""},`
+									+ `${data.debit_side[i] ? data.debit_side[i].amount : ""},`
+									+ `${data.credit_side[i] ? data.credit_side[i].date : ""},`
+									+ `${data.credit_side[i] ? data.credit_side[i].account : ""},`
+									+ `${data.credit_side[i] ? data.credit_side[i].amount : ""}\r\n`;
+							}
+							if (data.balance_side) {
+								let replacee = ",,";
+								replacee += `${data.balance_side == "debit_side" ? "," : "\r\n"}`;
+								let balance_row = `,Balance c/d,${data.balance}`;
+								if (csv.includes(replacee)) {
+									balance_row += data.balance_side == "debit_side" ? "," : "\r\n";
+									csv = csv.replace(replacee, balance_row);
+								} else {
+									let empties = `,,${data.balance_side == "debit_side" ? "\r\n" : ","}`;
+									balance_row = data.balance_side == "debit_side" ? balance_row + empties : empties + balance_row + "\r\n";
+									csv += balance_row;
+								}
+							}
+							let empty_row = ",,,,,\r\n";
+							csv += empty_row + `,,${data.total},,,${data.total}\r\n`;
+							csv = "Dr,,,,,Cr\r\nDate,Particulars,Amount,Date,Particulars,Amount\r\n" + csv;
+							zip.file(`${journal_form.getAttribute("fy_name")}_${li.innerText}_account.csv`, csv);
+						}
+					})
+					.catch(error => {alert(error);});
+					requests.push(request);
+				}
+				await Promise.all(requests);
+				await zip.generateAsync({type: "blob"}).then(content => {
+					saveAs(content, `${journal_form.getAttribute("fy_name")}_ledgers.zip`);
+				});
+			};
+		</script>
+	</body>
+</html>

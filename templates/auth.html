@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+		<meta content="ie=edge" http-equiv="X-UA-Compatible">
+		<style>
+			body {
+				align-items: center;
+				background-color: rgb(50, 50, 50);
+				display: flex;
+				font-family: sans-serif;
+				height: 100vh;
+				justify-content: center;
+				margin: 0;
+				padding: 0;
+			}
+			.form_wrapper {
+				background-image: linear-gradient(pink, yellow);
+				border-radius: 10px;
+				box-shadow: 0 0 20px black;
+				margin: 10px;
+				padding: 5px;
+			}
+			.form_wrapper > form {
+				background-color: black;
+				border-radius: inherit;
+				display: flex;
+				flex-direction: column;
+				padding: 50px;
+			}
+			.form_wrapper > form > button {
+				background-image: linear-gradient(pink, yellow);
+				border: none;
+				border-radius: 200px;
+				color: black;
+				cursor: pointer;
+				font-weight: bold;
+				padding: 10px;
+			}
+			.form_wrapper > form > .error {
+				background-clip: text;
+				background-image: linear-gradient(pink, yellow);
+				color: transparent;
+				font-size: small;
+				padding: 2px;
+				text-align: center;
+			}
+			.form_wrapper > form > h1 {
+				color: white;
+				font-weight: bold;
+				text-align: center;
+			}
+
+			.form_wrapper > form > .input_wrapper {
+				justify-content: center;
+				border-radius: 200px;
+				display: flex;
+				padding: 3px;
+			}
+			.form_wrapper > form > .input_wrapper > input {
+				background-color: rgb(50, 50, 50);
+				border: none;
+				border-radius: 200px;
+				color: white;
+				outline: none;
+				padding: 10px;
+				text-align: center;
+				width: 100%;
+			}
+			.form_wrapper > form > small {
+				color: white;
+				padding: 10px;
+				text-align: center;
+			}
+			.form_wrapper > form > small > a {
+				color: white;
+				font-weight: bold;
+			}
+			#policy {
+				background-color: black;
+				color: white;
+				height: 90%;
+				margin: 0;
+				padding: 10%;
+				overflow: scroll;
+				position: absolute;
+				width: 90%;
+			}
+			#policy > button {
+				background-color: inherit;
+				border: 1px solid grey;
+				color: red;
+				padding: 5px;
+				position: fixed;
+				right: 0;
+				top: 0;
+			}
+		</style>
+		<title>Accounting - auth</title>
+	</head>
+	<body>
+		<div class="form_wrapper">
+			<form id="signin_form">
+				<h1>Sign In</h1>
+				<div class="input_wrapper">
+					<input id="signin_username_or_email" name="signin_username_or_email" placeholder="username or email" type="text">
+				</div>
+				<small class="error" id="error_signin_username_or_email"><br></small>
+				<div class="input_wrapper">
+					<input id="signin_password" name="signin_password" placeholder="password" type="password">
+				</div>
+				<small class="error" id="error_signin_password"><br></small>
+				<button type="submit">Submit</button>
+				<small>
+				<a href="#" onclick="signup_form.style.display='flex';signin_form.style.display='none'">Sign up?</a>
+				Or <a href="#reset" onclick="reset_form.style.display='flex';signin_form.style.display='none'">reset password?</a>
+				</small>
+			</form>
+			<form id="signup_form" style="display: none">
+				<h1>Sign Up</h1>
+				<div class="input_wrapper">
+					<input id="signup_username" name="signup_username" placeholder="username" type="text">
+				</div>
+				<small class="error" id="error_signup_username"><br></small>
+				<div class="input_wrapper">
+					<input id="signup_email" name="signup_email" placeholder="email" type="text">
+				</div>
+				<small class="error" id="error_signup_email"><br></small>
+				<div class="input_wrapper">
+					<input id="signup_password" name="signup_password" placeholder="password" type="password">
+				</div>
+				<small class="error" id="error_signup_password"><br></small>
+				<div class="input_wrapper">
+					<input id="signup_confirm_password" name="signup_confirm_password" placeholder="confirm password" type="password">
+				</div>
+				<small class="error" id="error_signup_confirm_password"><br></small>
+				<small>By submitting, you agree with our
+				<a href="#" onclick="document.getElementById('policy').style.display='block'">policy.</a>
+				</small>
+				<button type="submit">Submit</button>
+				<small>Have an account?
+				<a href="#" onclick="signin_form.style.display='flex';signup_form.style.display='none'">Sign in?</a>
+				</small>
+			</form>
+			<form id="reset_form" style="display: none">
+				<h1>Reset Password</h1>
+				<div class="input_wrapper">
+					<input id="reset_username_or_email" name="reset_username_or_email" placeholder="username or email" type="text">
+				</div>
+				<small class="error" id="error_reset_username_or_email"><br></small>
+				<div class="input_wrapper">
+					<input id="reset_password" name="reset_password" placeholder="password" type="password">
+				</div>
+				<small class="error" id="error_reset_password"><br></small>
+				<div class="input_wrapper">
+					<input id="reset_confirm_password" name="reset_confirm_password" placeholder="confirm password" type="password">
+				</div>
+				<small class="error" id="error_reset_confirm_password"><br></small>
+				<button type="submit">Submit</button>
+				<small>Back to
+				<a href="#" onclick="signin_form.style.display='flex';reset_form.style.display='none'">Sign in?</a>
+				</small>
+			</form>
+			<form id="otp_form" style="display: none">
+				<h1>Verify OTP</h1>
+				<div class="input_wrapper">
+					<input id="otp" name="otp" placeholder="otp" type="number">
+				</div>
+				<small class="error" id="error_otp"><br></small>
+				<button type="submit">Submit</button>
+			</form>
+		</div>
+		<div id="policy" style="display: none">
+			<button onclick="document.getElementById('policy').style.display='none'">X</button>
+			{% include "policy.html" %}
+		</div>
+		<script>
+			var inputs = document.getElementsByTagName("input");
+			for (let i=0; i < inputs.length; i++) {
+				if (!inputs[i].style.backgroundImage) {
+					inputs[i].addEventListener("focus", () => {
+						inputs[i].parentNode.style.backgroundColor = "grey";
+					});
+					inputs[i].addEventListener("blur", () => {
+						inputs[i].parentNode.style.backgroundColor = "";
+					});
+				}
+			}
+			var clean_errors = () => {
+				var input_wrappers = document.getElementsByClassName("input_wrapper");
+				var labels = document.getElementsByTagName("label");
+				for (var i=0; i < input_wrappers.length; i++) {
+					input_wrappers[i].style.backgroundImage = "none";
+				}
+				for (var i=0; i < labels.length; i++) {
+					labels[i].innerHTML = "<br>";
+				}
+			};
+			var signin_form = document.getElementById("signin_form");
+			signin_form.addEventListener("submit", (e) => {
+				e.preventDefault();
+				var data = new FormData(signin_form);
+				fetch("/signin", {
+					body: data,
+					method: "POST"
+				}).then(response => response.json()).then(data => {
+					if (data.error && data.field) {
+						clean_errors();
+						var input = document.getElementById(data.field);
+						var input_wrapper = input.parentNode;
+						input_wrapper.style.backgroundImage = "linear-gradient(pink, yellow)";
+						document.getElementById("error_"+data.field).innerHTML = data.error;
+					} else if (data.success && data.signin_token) {
+						signin_form.style.display = "none";
+						otp_form.style.display = "flex";
+						otp_form.setAttribute("type", "signin");
+						otp_form.setAttribute("token", data.signin_token);
+					}
+				}).catch(error => {alert(error)});
+			});
+			var otp_form = document.getElementById("otp_form");
+			var signup_form = document.getElementById("signup_form");
+			signup_form.addEventListener("submit", (e) => {
+				e.preventDefault();
+				var data = new FormData(signup_form);
+				fetch("/signup", {
+					body: data,
+					method: "POST"
+				}).then(response => response.json()).then(data => {
+					if (data.error && data.field) {
+						clean_errors();
+						var input = document.getElementById(data.field);
+						var input_wrapper = input.parentNode;
+						input_wrapper.style.backgroundImage = "linear-gradient(pink, yellow)";
+						document.getElementById("error_"+data.field).innerHTML = data.error;
+					} else if (data.success && data.signup_token) {
+						signup_form.style.display = "none";
+						otp_form.style.display = "flex";
+						otp_form.setAttribute("type", "signup");
+						otp_form.setAttribute("token", data.signup_token);
+					}
+				}).catch(error => {alert(error)});
+			});
+			reset_form.addEventListener("submit", (e) => {
+				e.preventDefault();
+				var data = new FormData(reset_form);
+				fetch("/reset", {
+					body: data,
+					method: "POST"
+				}).then(response => response.json()).then(data => {
+					if (data.error && data.field) {
+						clean_errors();
+						var input = document.getElementById(data.field);
+						var input_wrapper = input.parentNode;
+						input_wrapper.style.backgroundImage = "linear-gradient(pink, yellow)";
+						document.getElementById("error_"+data.field).innerHTML = data.error;
+					} else if (data.success && data.reset_token) {
+						reset_form.style.display = "none";
+						otp_form.style.display = "flex";
+						otp_form.setAttribute("type", "reset");
+						otp_form.setAttribute("token", data.reset_token);
+					}
+				}).catch(error => {alert(error)});
+			});
+			otp_form.addEventListener("submit", (e) => {
+				e.preventDefault();
+				var data = new FormData(otp_form);
+				data.append("type", otp_form.getAttribute("type"));
+				data.append("token", otp_form.getAttribute("token"));
+				fetch("/otp", {
+					body: data,
+					method: "POST"
+				}).then(response => response.json()).then(data => {
+					if (data.error && data.field && data.field != "type" && data.field != "token") {
+						clean_errors();
+						var input = document.getElementById(data.field);
+						var input_wrapper = input.parentNode;
+						input_wrapper.style.backgroundImage = "linear-gradient(pink, yellow)";
+						document.getElementById("error_"+data.field).innerHTML = data.error;
+					} else if (data.success && data.user_token) {
+						document.cookie = `user_token=${encodeURIComponent(data.user_token)};Max-Age=${365*24*60*60};Path=/;SameSite=True;Secure`;
+						window.location.href = "/";
+					}
+				}).catch(error => {alert(error)});
+			});
+		</script>
+	</body>
+
+</html>
