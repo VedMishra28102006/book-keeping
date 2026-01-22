@@ -130,54 +130,6 @@
 				padding: 5px 20px 5px;
 				text-align: center;
 			}
-			#header_wrapper {
-				background-image: linear-gradient(to right, pink, yellow);
-				box-shadow: 0px 0px 5px black;
-				height: 75px;
-				margin: 0px;
-				padding: 0px;
-				padding-bottom: 3px;
-				position: fixed;
-				width: 100%;
-				z-index: 2;
-			}
-			header {
-				align-items: center;
-				background-color: black;
-				display: flex;
-				flex-direction: row;
-				margin: 0px;
-				padding: 0px;
-			}
-			header > button {	
-				background-color: transparent;
-				border: none;
-				cursor: pointer;
-				padding-right: 10px;
-			}
-			header > button > i {
-				background-clip: text;
-				background-image: linear-gradient(to right, pink, yellow);
-				color: transparent;
-				font-size: 30px;
-			}
-			header > button:first-of-type {
-				margin-left: auto;
-			}
-			header > h2,
-			nav > h2 {
-				background-clip: text;
-				background-image: linear-gradient(to right, pink, yellow);
-				color: transparent;
-				font-family: cursive;
-				padding-left: 10px;
-			}
-			header > h2:hover {
-				cursor: pointer;
-			}
-			header > #hamburger {
-				display: none;
-			}
 			#journal,
 			#ledger {
 				display: none;
@@ -204,51 +156,7 @@
 			main {
 				display: flex;
 				justify-content: center;
-				margin-top: 80px;
 				width: 100%;
-			}
-			#nav_wrapper {
-				background-image: linear-gradient(to bottom, pink, yellow);
-				box-shadow: 0px 0px 5px black;
-				height: 100%;
-				margin: 0px;
-				overflow: hidden;
-				padding: 0px;
-				padding-left: 3px;
-				position: fixed;
-				right: 0px;
-				transition: all 1s ease;
-				transform: translateX(120%);
-				width: 40%;
-				z-index: 3;
-			}
-			nav {
-				background-color: black;
-				display: flex;
-				flex-direction: column;
-				height: 100%;
-				margin: 0px;
-				padding: 0px;
-				text-align: center;
-				width: 100%;
-			}
-			nav > ul {
-				list-style-type: none;
-				margin: 0px;
-				padding: 0px;
-			}
-			nav > ul > li {
-				color: white;
-				font-weight: bold;
-				padding: 10px 40px 10px;
-				text-align: center;
-			}
-			nav > ul > li:hover {
-				background-color: rgb(30, 30, 30);
-				cursor: pointer;
-			}
-			nav > ul > li.selected {
-				background-color: rgb(50, 50, 50);
 			}
 			table {
 				background-image: linear-gradient(to right, pink, yellow);
@@ -389,7 +297,7 @@
 				flex-direction: row;
 				padding: 0px;
 				position: sticky;
-				top: 80px;
+				top: 0px;
 				z-index: 1;
 			}
 			.top_form > button {
@@ -430,36 +338,6 @@
 		<title>Accounting</title>
 	</head>
 	<body>
-		<div id="header_wrapper">
-			<header>
-				<h2 onclick="show_fy()">Accounting</h2>
-				<button onclick="
-					document.cookie = 'user_token=;';
-					window.location.href = '/auth';
-				"><i class="fa-solid fa-sign-out"></i></button>
-				<button id="hamburger"><i class="fa-solid fa-bars"></i></button>
-			</header>
-		</div>
-		<div id="nav_wrapper">
-			<nav>
-				<h2>Menu</h2>
-				<ul id="nav_list">
-					<li onclick="
-						ledger.style.display='none';
-						journal.style.display='block';
-					">Journal</li>
-					<li onclick="
-						journal.style.display='none';
-						ledger.style.display='block';
-					">Ledger</li>
-				</ul>
-			</nav>
-			<div id="footer_wrapper">
-				<footer>
-					<small>A project by <a href="https://www.github.com/vedmishra28102006">vedmishra28102006</a></small>
-				</footer>
-			</div>
-		</div>
 		<main>
 			<div id="fy">
 				<form class="top_form" id="fy_form">
@@ -470,6 +348,15 @@
 					<button id="add_btn" type="submit"><i class="fa-solid fa-plus"></i></button>
 				</form>
 				<ul id="fy_list"></ul>
+				<div class="toolbar_wrapper"><div class="toolbar">
+					<button onclick="
+						document.cookie = 'user_token=;';
+						window.location.href = '/auth';
+					">
+						<i class="fa-solid fa-sign-out"></i>
+						<small>Sign Out</small>
+					</button>
+				</div></div>
 			</div>
 			<div id="journal">
 				<form class="table_wrapper" id="journal_form">
@@ -506,6 +393,13 @@
 						<i class="fa-solid fa-file-export"></i>
 						<small>Export Book</small>
 					</button>
+					<button onclick="
+						journal.style.display='none';
+						ledger.style.display='block';
+					">
+						<i class="fa-solid fa-book"></i>
+						<small>Journal</small>
+					</button>
 				</div></div>
 			</div>
 			<div id="ledger">
@@ -525,6 +419,13 @@
 						<button onclick="export_ledgers()">
 							<i class="fa-solid fa-file-export"></i>
 							<small>Export All</small>
+						</button>
+						<button onclick="
+							ledger.style.display='none';
+							journal.style.display='block';
+						">
+							<i class="fa-solid fa-book"></i>
+							<small>Journal</small>
 						</button>
 					</div></div>
 				</div>
@@ -577,21 +478,6 @@
 				user_status = data.status;
 			})
 			.catch(error => { alert(error); });
-			let hamburger = document.getElementById("hamburger");
-			let nav_wrapper = document.getElementById("nav_wrapper");
-			hamburger.addEventListener("click", (event) => {
-				event.stopPropagation();
-				nav_wrapper.style.transform = "translateX(0px)";
-			});
-			let nav_list = document.getElementById("nav_list");
-			for (let i=0; i < nav_list.children.length; i++) {
-				nav_list.children[i].addEventListener("click", () => {
-					for (let j=0; j < nav_list.children.length; j++) {
-						nav_list.children[j].classList.remove("selected");
-					}
-					nav_list.children[i].classList.add("selected");
-				});
-			}
 			let fy_form = document.getElementById("fy_form");
 			let fy_list = document.getElementById("fy_list");
 			let fy_item = (row) => {
@@ -627,9 +513,6 @@
 						options.classList.remove("visible");
 						optionsVisible = 0;
 					}
-				}
-				if (nav_wrapper.style.transform == "translateX(0px)") {
-					nav_wrapper.style.transform = "translateX(120%)";
 				}
 				if (errorVisible) {
 					for (e of errorVisible) {
@@ -923,15 +806,8 @@
 			};
 			let show_journal = (id) => {
 				fy.style.display = "none";
-				hamburger.style.display = "block";
 				journal.style.display = "block";
 				journal_form.setAttribute("fy_id", `${id}`);
-				for (li of nav_list.children) {
-					if (li.classList.contains("selected")) {
-						nav_list.children[1].classList.remove("selected");
-					}
-				}
-				nav_list.children[0].classList.add("selected");
 				journal_rows.innerHTML = "";
 				fetch(`/journal/${id}`, {method: "GET"})
 				.then(response => response.json())
@@ -1131,7 +1007,8 @@
 			};
 			let refer_journal = (id) => {
 				if (!id) { return; }
-				nav_list.children[0].click();
+				ledger.style.display='none';
+				journal.style.display='block';
 				journal_rows.children[id-1].scrollIntoView({
 					behavior: "smooth",
 					block: "center"
@@ -1169,7 +1046,6 @@
 				ledger.style.display = "none";
 				ledger_menu.style.display = "block";
 				ledger_account.style.display = "none";
-				hamburger.style.display = "none";
 				fy.style.display = "flex";
 			};
 			let export_ledgers = async () => {
