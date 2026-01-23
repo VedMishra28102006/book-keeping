@@ -27,7 +27,8 @@ db.execute("""CREATE TABLE IF NOT EXISTS users (
 	created DATETIME NOT NULL DEFAULT (datetime('now')),
 	token INTEGER NOT NULL UNIQUE,
 	ip TEXT NOT NULL,
-	status TEXT NOT NULL DEFAULT "open"
+	status TEXT NOT NULL DEFAULT "open",
+	admin INTEGER NOT NULL DEFAULT 0
 )""")
 db.execute("""CREATE TABLE IF NOT EXISTS signins (
 	id INTEGER PRIMARY KEY NOT NULL UNIQUE,

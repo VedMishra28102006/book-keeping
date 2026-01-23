@@ -15,8 +15,8 @@ cursor.execute("SELECT * FROM users WHERE username='admin'")
 row = cursor.fetchone()
 if not row:
 	admin_password = bcrypt.hashpw(os.getenv("ADMIN_PASSWORD").encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-	cursor.execute("INSERT INTO users (username, email, password, token, ip) VALUES(?, ?, ?, ?, ?)",
-		("admin", os.getenv("GMAIL_ADDRESS"), admin_password, 0, 0))
+	cursor.execute("INSERT INTO users (username, email, password, token, ip, admin) VALUES(?, ?, ?, ?, ?, ?)",
+		("admin", os.getenv("GMAIL_ADDRESS"), admin_password, 0, 0, 1))
 	db.commit()
 db.close()
 
@@ -42,7 +42,7 @@ def user():
 	cursor = db.cursor()
 	cursor.row_factory = sqlite3.Row
 	if request.method == "GET":
-		cursor.execute(f"SELECT id, username, status FROM users WHERE username!=?", ("admin",))
+		cursor.execute(f"SELECT id, username, status FROM users WHERE admin!=?", (1,))
 		rows = cursor.fetchall()
 		rows = [dict(row) for row in rows]
 		db.close()
@@ -62,7 +62,7 @@ def user():
 		purpose = request.form.get("purpose").strip()
 		id = request.form.get("id").strip()
 		if purpose == "update_status":
-			cursor.execute(f"SELECT * FROM users WHERE id=? AND username!=?", (id, "admin"))
+			cursor.execute(f"SELECT * FROM users WHERE id=? AND admin!=?", (id, 1))
 			row = cursor.fetchone()
 			if not row:
 				db.close()
@@ -81,7 +81,7 @@ def user():
 			db.close()
 			return jsonify(error), 400
 		id = request.form.get("id").strip()
-		cursor.execute(f"SELECT * FROM users WHERE id=? AND username!=?", (id, "admin"))
+		cursor.execute(f"SELECT * FROM users WHERE id=? AND admin!=?", (id, 1))
 		row = cursor.fetchone()
 		if not row:
 			db.close()
@@ -140,7 +140,7 @@ def import_db():
 			cursor.execute(f"""UPDATE users SET {"=?, ".join([i for i in admin_data.keys()])+"=? "} WHERE username='admin'""",
 				tuple([i for i in admin_data.values()]))
 		else:
-			cursor.execute(f"""INSERT INTO users ({",".join([i for i in admin_data.keys()])}) VALUES(?, ?, ?, ?, ?)""",
+			cursor.execute(f"""INSERT INTO users ({",".join([i for i in admin_data.keys()])}) VALUES({",".join(["?" for _ in range(len(admin_data))])})""",
 				tuple([i for i in admin_data.values()]))
 		db.commit()
 		db.close()

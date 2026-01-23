@@ -34,7 +34,7 @@ def status():
 	signed = check_signed(request.cookies)
 	if not signed:
 		return redirect("/auth")
-	return jsonify({"status": signed.get("status")}), 200
+	return jsonify({"status": signed.get("status"), "admin": signed.get("admin")}), 200
 
 @accounting.route("/fy", methods=["POST", "GET", "PATCH", "DELETE"])
 def fy():
