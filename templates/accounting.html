@@ -398,7 +398,7 @@
 						ledger.style.display='block';
 					">
 						<i class="fa-solid fa-book"></i>
-						<small>Journal</small>
+						<small>Ledger</small>
 					</button>
 				</div></div>
 			</div>
@@ -476,6 +476,12 @@
 			.then(response => response.json())
 			.then(data => {
 				user_status = data.status;
+				if (data.admin) document.getElementById("fy").querySelector(".toolbar").insertAdjacentHTML("beforeend", `
+					<button onclick="window.location.href = '/admin';">
+						<i class="fa-solid fa-user-shield"></i>
+						<small>Admin Page</small>
+					</button>
+				`);
 			})
 			.catch(error => { alert(error); });
 			let fy_form = document.getElementById("fy_form");
