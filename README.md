@@ -4,6 +4,8 @@ A book keeping app
 
 2. How to run
 
+Install and start the ClamAV Daemon
+
 Install the required packages using
 
 pip install -r requirements.txt

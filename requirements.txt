@@ -6,3 +6,4 @@ pytz
 python-dateutil
 numpy
 scikit-learn
+pyclamd
