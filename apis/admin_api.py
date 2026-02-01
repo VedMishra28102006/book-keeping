@@ -1,7 +1,8 @@
 from apis.authentication_api import check_fields, check_signed
-import bcrypt, os, sqlite3
+import bcrypt, pyclamd, os, sqlite3
 from dotenv import load_dotenv
 from flask import Blueprint, current_app, jsonify, redirect, render_template, request, send_file
+from io import BytesIO
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -19,6 +20,19 @@ if not row:
 		("admin", os.getenv("GMAIL_ADDRESS"), admin_password, 0, 0, 1))
 	db.commit()
 db.close()
+
+def virus_scan(data):
+	try:
+		cd = pyclamd.ClamdUnixSocket()
+		if not cd.ping():
+			raise RuntimeError("ClamAV daemon unresponsive")
+	except Exception:
+		cd = pyclamd.ClamdNetworkSocket()
+		cd.ping()
+	result = cd.scan_stream(BytesIO(data))
+	if result:
+		return list(result.values())[0][1]
+	return None
 
 admin = Blueprint("admin", __name__)
 
@@ -126,6 +140,9 @@ def import_db():
 	try:
 		db = sqlite3.connect(":memory:")
 		raw = data.read()
+		virus  = virus_scan(raw)
+		if virus:
+			return jsonify({"error": "Malicious data"}), 400
 		db.deserialize(raw)
 		db.execute("PRAGMA schema_version;")
 		db.close()
