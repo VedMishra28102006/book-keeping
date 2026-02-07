@@ -13,32 +13,19 @@
 				padding: 0px;
 				user-select: none;
 			}
-			#footer_wrapper {
-				bottom: 0px;
-				display: flex;
-				justify-content: center;
-				position: absolute;
-				width: 100%;
-			}
-			footer {
-				padding: 10px;
-				text-align: center;
-			}
-			footer > small {
-				color: white;
-			}
-			footer > small > a {
-				color: white;
-				font-weight: bold;
-			}
 			#fy {
 				display: flex;
 				flex-direction: column;
 				justify-content: center;
 				width: 100%;
 			}
-			#fy_list,
-			#ledger_list {
+			#fy_list > li[status="closed"] > p:nth-child(2) {
+				display: block;
+			}
+			#fy_list > li[status="open"] > p:nth-child(2) {
+				display: none;
+			}
+			.list {
 				display: flex;
 				flex-direction: column;
 				list-style-type: none;
@@ -47,8 +34,7 @@
 				scrollbar-color: rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.3);
 				scrollbar-width: thin;
 			}
-			#fy_list > li,
-			#ledger_list > li {
+			.list > li {
 				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
 				border-top: 1px solid grey;
 				color: white;
@@ -57,43 +43,26 @@
 				font-size: large;
 				position: relative;
 			}
-			#fy_list > li > p,
-			#ledger_list > li > p {
+			.list > li > p {
 				flex: 1;
 				margin: 0;
 				padding: 10px;
 			}
-			#fy_list > li > p:nth-child(2) { flex: 0; }
-			#fy_list > li:first-child,
-			#ledger_list > li:first-child {
+			.list > li > p:nth-child(2) {
+				flex: 0;
+			}
+			.list > li:first-child {
 				border-top: none;
 			}
-			#fy_list > li[status="closed"] > p:nth-child(2) {
-				display: block;
-			}
-			#fy_list > li[status="open"] > p:nth-child(2) {
-				display: none;
-			}
-			#fy_list > li:hover,
-			#fy_list > li > ul > li:hover,
-			#ledger_list > li:hover {
+			.list > li:hover {
 				background-image: linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30));
 				cursor: pointer;
 			}
-			#fy_list > li > button {
-				background-color: transparent;
-				border: none;
-				color: white;
-				cursor: pointer;
-				float: right;
-				font-size: large;
-				font-weight: bold;
-			}
-			#fy_list > li > form {
+			.list > li > form {
 				display: flex;
 				flex: 1;
 			}
-			#fy_list > li > form > button {
+			.list > li > form > button {
 				background-image: linear-gradient(to right, pink, yellow);
 				border: none;
 				color: black;
@@ -102,7 +71,7 @@
 				font-weight: bold;
 				padding: 10px;
 			}
-			#fy_list > li > form > input {
+			.list > li > form > input {
 				background-color: transparent;
 				border: none;
 				color: white;
@@ -110,25 +79,6 @@
 				font-size: large;
 				padding: 10px;
 				outline: none;
-			}
-			#fy_list > li > ul {
-				box-shadow: 0px 0px 5px black;
-				display: none;
-				flex-direction: column;
-				list-style-type: none;
-				padding: 0px;
-				position: absolute;
-				right: 10px;
-				top: 10px;
-				z-index: 1;
-			}
-			#fy_list > li > ul.visible {
-				display: flex;
-			}
-			#fy_list > li > ul > li {
-				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
-				padding: 5px 20px 5px;
-				text-align: center;
 			}
 			#journal,
 			#ledger {
@@ -157,6 +107,38 @@
 				display: flex;
 				justify-content: center;
 				width: 100%;
+			}
+			.options {
+				box-shadow: 0px 0px 5px black;
+				display: none;
+				flex-direction: column;
+				list-style-type: none;
+				padding: 0px;
+				position: absolute;
+				right: 10px;
+				top: 10px;
+				z-index: 1;
+			}
+			.options.visible {
+				display: flex;
+			}
+			.options > li {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				padding: 5px 20px 5px;
+				text-align: center;
+			}
+			.options > li:hover {
+				background-image: linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30));
+				cursor: pointer;
+			}
+			.options_button {
+				background-color: transparent;
+				border: none;
+				color: white;
+				cursor: pointer;
+				float: right;
+				font-size: large;
+				font-weight: bold;
 			}
 			table {
 				background-image: linear-gradient(to right, pink, yellow);
@@ -271,7 +253,6 @@
 				background-clip: text;
 				background-image: linear-gradient(to right, pink, yellow);
 				color: transparent;
-				cursor: pointer;
 				font-size: 30px;
 			}
 			.toolbar > button > small {
@@ -280,6 +261,7 @@
 			}
 			.toolbar > button:hover {
 				background-color: rgba(255, 255, 255, 0.05);
+				cursor: pointer;
 			}
 			.toolbar_wrapper {
 				background-image: linear-gradient(to right, pink, yellow);
@@ -347,7 +329,7 @@
 					</div>
 					<button id="add_btn" type="submit"><i class="fa-solid fa-plus"></i></button>
 				</form>
-				<ul id="fy_list"></ul>
+				<ul class="list" id="fy_list"></ul>
 				<div class="toolbar_wrapper"><div class="toolbar">
 					<button onclick="
 						document.cookie = 'user_token=;';
@@ -410,7 +392,7 @@
 						</div>
 						<button type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
 					</form>
-					<ul id="ledger_list"></ul>
+					<ul class="list" id="ledger_list"></ul>
 					<div class="toolbar_wrapper"><div class="toolbar">
 						<button onclick="show_fy()">
 							<i class="fa-solid fa-house"></i>
@@ -490,7 +472,7 @@
 				return `<li id="${row.id}" onclick="show_journal('${row.id}')" status="${row.status}">
 					<p>${row.name}</p>
 					<p>(closed)</p>
-					<button onclick="event.stopPropagation();showOptions('${row.id}');">&vellip;</button>
+					<button class="options_button" onclick="event.stopPropagation();showOptions('${row.id}');">&vellip;</button>
 					<ul class="options" id="options${row.id}">
 						<li onclick="event.stopPropagation();show_journal('${row.id}')">view</li>
 						<li onclick="event.stopPropagation();edit_fy('${row.id}')">edit</li>
@@ -621,11 +603,11 @@
 			};
 			fetch_fy();
 			let edit_fy = (id) => {
+				document.getElementById(`options${id}`).classList.remove("visible");
 				if (user_status == "closed") {
 					alert("Your account has been closed");
 					return;
 				}
-				document.getElementById(`options${id}`).classList.remove("visible");
 				let fy = document.getElementById(`${id}`);
 				fy.innerHTML = `
 					<form onsubmit="event.preventDefault();update_fy('${id}')">
@@ -702,11 +684,11 @@
 				.catch(error => {alert(error);});
 			};
 			let delete_fy = (id) => {
+				document.getElementById(`options${id}`).classList.remove("visible");
 				if (user_status == "closed") {
 					alert("Your account has been closed");
 					return;
 				}
-				document.getElementById(`options${id}`).classList.remove("visible");
 				let data = new FormData();
 				data.append("id", id);
 				fetch("/fy", {
@@ -724,11 +706,11 @@
 				.catch(error => {alert(error);});
 			};
 			let toggle_fy = (target, id) => {
+				document.getElementById(`options${id}`).classList.remove("visible");
 				if (user_status == "closed") {
 					alert("Your account has been closed");
 					return;
 				}
-				document.getElementById(`options${id}`).classList.remove("visible");
 				let data = new FormData();
 				data.append("id", id);
 				data.append("purpose", "update_status");
@@ -935,11 +917,19 @@
 						alert(data.error);
 					} else {
 						for (row of data) {
-							ledger_list.insertAdjacentHTML("beforeend", `<li onclick="
+							ledger_list.insertAdjacentHTML("beforeend", `<li id="ledger_${row.id}" onclick="
 								ledger_menu.style.display='none';
 								ledger_account.style.display='block';
 								fetch_ledger_account('${row.account}');
-							"><p>${row.account}</p></li>`);
+							">
+								<p>${row.account}</p>
+								<p>${(row.type) ? `(${row.type})` : ""}</p>
+								<button class="options_button" onclick="event.stopPropagation();showOptions('_${row.account}');">&vellip;</button>
+								<ul class="options" id="options_${row.account}">
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'asset', '${row.account}')">+asset</li>
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'liability', '${row.account}')">+liability</li>
+								</ul>
+							</li>`);
 						}
 					}
 				})
@@ -1108,6 +1098,33 @@
 				await zip.generateAsync({type: "blob"}).then(content => {
 					saveAs(content, `${journal_form.getAttribute("fy_name")}_ledgers.zip`);
 				});
+			};
+			let to_bs = (target, type, account) => {
+				document.getElementById(`options_${account}`).classList.remove("visible");
+				if (user_status == "closed") {
+					alert("Your account has been closed");
+					return;
+				}
+				if (target.innerText == `(${type})`) {
+					return;
+				}
+				let data = new FormData();
+				data.append("fy_id", journal_form.getAttribute("fy_id"));
+				data.append("type", type);
+				data.append("account", account);
+				fetch("/bs", {
+					method: "PATCH",
+					body: data
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else if (data.success) {
+						target.innerHTML = (data.type) ? `(${data.type})` : ``;
+					}
+				})
+				.catch(error => {alert(error);});
 			};
 		</script>
 	</body>
