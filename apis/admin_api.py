@@ -108,6 +108,7 @@ def user():
 		cursor.execute(f"""DROP TABLE IF EXISTS "fys_{row.get("id")}" """)
 		for i in ids:
 			cursor.execute(f"""DROP TABLE IF EXISTS "journal_{row.get("id")}_{i.get("id")}" """)
+			cursor.execute(f"""DROP TABLE IF EXISTS "bs_{row.get("id")}_{i.get("id")}" """)
 		db.commit()
 		db.close()
 		return jsonify({"success": 1}), 200

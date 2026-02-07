@@ -85,6 +85,11 @@ def fy():
 			amount INTEGER NOT NULL,
 			description TEXT NOT NULL
 		)""")
+		cursor.execute(f"""CREATE TABLE IF NOT EXISTS bs_{user_id}_{row.get("id")} (
+			id INTEGER PRIMARY KEY UNIQUE NOT NULL,
+			account TEXT NOT NULL,
+			type TEXT NOT NULL
+		)""")
 		db.commit()
 		db.close()
 		return jsonify({
@@ -173,6 +178,7 @@ def fy():
 		row = dict(row)
 		cursor.execute(f"DELETE FROM fys_{user_id} WHERE id=?", (id,))
 		cursor.execute(f"DROP TABLE journal_{user_id}_{row.get("id")}")
+		cursor.execute(f"DROP TABLE bs_{user_id}_{row.get("id")}")
 		db.commit()
 		db.close()
 		return jsonify({"success": 1}), 200
@@ -277,6 +283,7 @@ def ledger(id):
 	cursor.execute(f"SELECT id FROM fys_{user_id} WHERE id=?", (id,))
 	row = cursor.fetchone()
 	if not row:
+		db.close()
 		return jsonify({"error": "Invalid id"}), 400
 	account = request.args.get("account")
 	if not account:
@@ -293,6 +300,18 @@ def ledger(id):
 			query_vec = vectorizer.transform([ledger_q.strip().lower()])
 			sim_scores = cosine_similarity(query_vec, tfidf_matrix).flatten()
 			rows = [rows[i] for i in sim_scores.argsort()[::-1] if sim_scores[i] >= 0.3]
+		cursor.execute(f"SELECT * FROM bs_{user_id}_{row["id"]}")
+		bss = cursor.fetchall()
+		bss = [dict(bs) for bs in bss]
+		for i in range(len(rows)):
+			for j in range(len(bss)):
+				if rows[i].get("account") == bss[j].get("account"):
+					rows[i]["type"] = bss[j].get("type")
+					break
+			if not rows[i].get("type"):
+				rows[i]["type"] = None
+			rows[i]["id"] = i
+		db.close()
 		return jsonify(rows), 200
 	balance = 0
 	cursor.execute(f"SELECT id,date,ac_credited AS account,amount FROM journal_{user_id}_{row["id"]} WHERE ac_debited=?", (account,))
@@ -309,6 +328,7 @@ def ledger(id):
 		credit_side = [dict(row) for row in credit_side]
 		credit_total = sum([row["amount"] for row in credit_side])
 		balance -= credit_total
+	db.close()
 	if not debit_side and not credit_side:
 		return jsonify({"error": "invalid account"}), 400
 	balance_side = None
@@ -330,3 +350,56 @@ def ledger(id):
 		"balance": abs(balance),
 		"total": total
 	}), 200
+
+@accounting.route("/bs", methods=["GET", "PATCH"])
+def bs():
+	signed = check_signed(request.cookies)
+	if not signed:
+		return redirect("/auth")
+	if request.method == "PATCH":
+		required_fields = ["fy_id", "type", "account"]
+		error = check_fields(request.form, required_fields)
+		if error:
+			db.close()
+			return jsonify(error), 400
+		fy_id = request.form.get("fy_id").strip()
+		type = request.form.get("type").strip()
+		account = request.form.get("account").strip()
+		db = sqlite3.connect("data.db")
+		cursor = db.cursor()
+		cursor.row_factory = sqlite3.Row
+		cursor.execute("SELECT id FROM users WHERE token=?", (request.cookies.get("user_token"),))
+		user_id = dict(cursor.fetchone()).get("id")
+		cursor.execute(f"SELECT * FROM fys_{user_id} WHERE id=?", (fy_id,))
+		row = cursor.fetchone()
+		if not row:
+			db.close()
+			return jsonify({"error": "Invalid id"}), 400
+		row = dict(row)
+		status = row.get("status")
+		if signed.get("status") == "closed":
+			db.close()
+			return "", 204
+		if status == "closed":
+			db.close()
+			return "", 204
+		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=?", (account, account))
+		rows = cursor.fetchall()
+		if not rows:
+			db.close()
+			return jsonify({"error": "Invalid account"}), 400
+		cursor.execute(f"SELECT * FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))
+		bs = cursor.fetchone()
+		if bs:
+			if bs["type"] == type:
+				db.close()
+				return "", 204
+			cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET type=? WHERE account=?", (type, account))
+		else:
+			cursor.execute(f"INSERT INTO bs_{user_id}_{row.get("id")} (account, type) VALUES(?, ?)", (account, type))
+		db.commit()
+		db.close()
+		return jsonify({
+			"success": 1,
+			"type": type
+		}), 200
