@@ -13,6 +13,61 @@
 				padding: 0px;
 				user-select: none;
 			}
+			.list {
+				display: flex;
+				flex-direction: column;
+				list-style-type: none;
+				margin: 0px;
+				padding: 0px;
+				scrollbar-color: rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.3);
+				scrollbar-width: thin;
+			}
+			.list > li {
+				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
+				border-top: 1px solid grey;
+				color: white;
+				display: flex;
+				flex-direction: row;
+				font-size: large;
+				position: relative;
+			}
+			.list > li > p {
+				flex: 1;
+				margin: 0;
+				padding: 10px;
+			}
+			.list > li > p:nth-child(2) {
+				flex: 0;
+			}
+			.list > li:first-child {
+				border-top: none;
+			}
+			.list > li:hover {
+				background-image: linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30));
+				cursor: pointer;
+			}
+			.list > li > form {
+				display: flex;
+				flex: 1;
+			}
+			.list > li > form > button {
+				background-image: linear-gradient(to right, pink, yellow);
+				border: none;
+				color: black;
+				cursor: pointer;
+				font-size: large;
+				font-weight: bold;
+				padding: 10px;
+			}
+			.list > li > form > input {
+				background-color: transparent;
+				border: none;
+				color: white;
+				flex: 1;
+				font-size: large;
+				padding: 10px;
+				outline: none;
+			}
 			main {
 				display: flex;
 				justify-content: center;
@@ -24,76 +79,7 @@
 				justify-content: center;
 				width: 100%;
 			}
-			#user_list {
-				display: flex;
-				flex-direction: column;
-				list-style-type: none;
-				margin: 0px;
-				padding: 0px;
-				scrollbar-color: rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.3);
-				scrollbar-width: thin;
-			}
-			#user_list > li {
-				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
-				border-top: 1px solid grey;
-				color: white;
-				display: flex;
-				flex-direction: row;
-				font-size: large;
-				position: relative;
-			}
-			#user_list > li > p {
-				flex: 1;
-				margin: 0;
-				padding: 10px;
-			}
-			#user_list > li > p:nth-child(2) { flex: 0; }
-			#user_list > li:first-child {
-				border-top: none;
-			}
-			#user_list > li[status="closed"] > p:nth-child(2) {
-				display: block;
-			}
-			#user_list > li[status="open"] > p:nth-child(2) {
-				display: none;
-			}
-			#user_list > li:hover,
-			#user_list > li > ul > li:hover {
-				background-image: linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30));
-				cursor: pointer;
-			}
-			#user_list > li > button {
-				background-color: transparent;
-				border: none;
-				color: white;
-				cursor: pointer;
-				float: right;
-				font-size: large;
-				font-weight: bold;
-			}
-			#user_list > li > form {
-				display: flex;
-				flex: 1;
-			}
-			#user_list > li > form > button {
-				background-image: linear-gradient(to right, pink, yellow);
-				border: none;
-				color: black;
-				cursor: pointer;
-				font-size: large;
-				font-weight: bold;
-				padding: 10px;
-			}
-			#user_list > li > form > input {
-				background-color: transparent;
-				border: none;
-				color: white;
-				flex: 1;
-				font-size: large;
-				padding: 10px;
-				outline: none;
-			}
-			#user_list > li > ul {
+			.options {
 				box-shadow: 0px 0px 5px black;
 				display: none;
 				flex-direction: column;
@@ -104,13 +90,32 @@
 				top: 10px;
 				z-index: 1;
 			}
-			#user_list > li > ul.visible {
+			.options.visible {
 				display: flex;
 			}
-			#user_list > li > ul > li {
+			.options > li {
 				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
 				padding: 5px 20px 5px;
 				text-align: center;
+			}
+			.options > li:hover {
+				background-image: linear-gradient(to right, rgb(50, 50, 50), rgb(30, 30, 30));
+				cursor: pointer;
+			}
+			.options_button {
+				background-color: transparent;
+				border: none;
+				color: white;
+				cursor: pointer;
+				float: right;
+				font-size: large;
+				font-weight: bold;
+			}
+			#user_list > li[status="closed"] > p:nth-child(2) {
+				display: block;
+			}
+			#user_list > li[status="open"] > p:nth-child(2) {
+				display: none;
 			}
 			.toolbar {
 				align-items: center;
@@ -138,7 +143,6 @@
 				background-clip: text;
 				background-image: linear-gradient(to right, pink, yellow);
 				color: transparent;
-				cursor: pointer;
 				font-size: 30px;
 			}
 			.toolbar > button > small {
@@ -147,6 +151,7 @@
 			}
 			.toolbar > button:hover {
 				background-color: rgba(255, 255, 255, 0.05);
+				cursor: pointer;
 			}
 			.toolbar_wrapper {
 				background-image: linear-gradient(to right, pink, yellow);
@@ -213,7 +218,7 @@
 						<input id="user_name" name="user_name" placeholder="username..." type="text">
 					</div>
 				</form>
-				<ul id="user_list"></ul>
+				<ul class="list" id="user_list"></ul>
 			</div>
 			<div class="toolbar_wrapper"><div class="toolbar">
 				<button onclick="window.location.href = '/'">
@@ -245,7 +250,7 @@
 				return `<li id="${row.id}" status="${row.status}">
 					<p>${row.username}</p>
 					<p>(closed)</p>
-					<button onclick="event.stopPropagation();showOptions('${row.id}');">&vellip;</button>
+					<button class="options_button" onclick="event.stopPropagation();showOptions('${row.id}');">&vellip;</button>
 					<ul class="options" id="options${row.id}">
 						<li onclick="event.stopPropagation();delete_user('${row.id}')">delete</li>
 						<li onclick="event.stopPropagation();toggle_user(this, '${row.id}')">${(row.status == "closed") ? "open" : "close"}</li>
