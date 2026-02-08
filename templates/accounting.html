@@ -5,6 +5,9 @@
 		<meta content="initial-scale=1.0,user-scalable=no,width=device-width" name="viewport">
 		<meta content="ie=edge" http-equiv="X-UA-Compatible">
 		<style>
+			* {
+				box-sizing: border-box;
+			}
 			body {
 				background-color: rgb(30, 30, 30);
 				display: flex;
@@ -31,8 +34,6 @@
 				list-style-type: none;
 				margin: 0px;
 				padding: 0px;
-				scrollbar-color: rgba(0, 0, 0, 0.7) rgba(0, 0, 0, 0.3);
-				scrollbar-width: thin;
 			}
 			.list > li {
 				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
@@ -160,7 +161,6 @@
 				background-color: transparent;
 				border: none;
 				color: white;
-				box-sizing: border-box;
 				font-size: large;
 				margin: 0px;
 				outline: none;
@@ -233,7 +233,8 @@
 				box-shadow: 0px 0px 5px black;
 				display: flex;
 				flex-direction: row;
-				justify-content: center;
+				justify-content: start;
+				overflow-x: auto;
 				padding: 0px;
 				width: 100%;
 			}
