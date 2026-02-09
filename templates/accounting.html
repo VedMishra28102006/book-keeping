@@ -16,6 +16,14 @@
 				padding: 0px;
 				user-select: none;
 			}
+			#bs,
+			#journal,
+			#ledger {
+				display: none;
+				margin: 0px;
+				padding: 0px;
+				width: 100%;
+			}
 			#fy {
 				display: flex;
 				flex-direction: column;
@@ -81,13 +89,6 @@
 				padding: 10px;
 				outline: none;
 			}
-			#journal,
-			#ledger {
-				display: none;
-				margin: 0px;
-				padding: 0px;
-				width: 100%;
-			}
 			#journal_form > button[type="button"] {
 				background-image: linear-gradient(to right, rgb(30, 30, 30), black);
 				border: 1px solid grey;
@@ -97,9 +98,6 @@
 				cursor: pointer;
 				left: 0px;
 				position: sticky;
-			}
-			#ledger {
-				display: none;
 			}
 			#ledger_account {
 				display: none;
@@ -326,7 +324,7 @@
 				<form class="top_form" id="fy_form">
 					<button id="search_btn" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
 					<div class="tf_wrapper">
-						<input id="fy_name" name="fy_name" placeholder="financial year..." type="text">
+						<input id="fy_name" name="fy_name" placeholder="search fy..." type="text">
 					</div>
 					<button id="add_btn" type="submit"><i class="fa-solid fa-plus"></i></button>
 				</form>
@@ -410,6 +408,13 @@
 							<i class="fa-solid fa-book"></i>
 							<small>Journal</small>
 						</button>
+						<button onclick="
+							ledger.style.display='none';
+							bs.style.display='block';
+						">
+							<i class="fa-solid fa-book"></i>
+							<small>Balance Sheet</small>
+						</button>
 					</div></div>
 				</div>
 				<div id="ledger_account">
@@ -442,15 +447,61 @@
 							<small>Export Book</small>
 						</button>
 						<button onclick="
+							ledger.style.display='none';
+							journal.style.display='block';
+						">
+							<i class="fa-solid fa-book"></i>
+							<small>Journal</small>
+						</button>
+						<button onclick="
 							ledger_account.style.display='none';
 							ledger_menu.style.display='block';
 							ledger_table.setAttribute('account', '');
 						">
-							<i class="fa-solid fa-arrow-left"></i>
-							<small>Back</small>
+							<i class="fa-solid fa-bars"></i>
+							<small>Ledger Menu</small>
+						</button>
+						<button onclick="
+							ledger.style.display='none';
+							bs.style.display='block';
+						">
+							<i class="fa-solid fa-book"></i>
+							<small>Balance Sheet</small>
 						</button>
 					</div></div>
 				</div>
+			</div>
+			<div id="bs">
+				<div class="table_wrapper" id="bs_table">
+					<table>
+						<thead>
+							<tr>
+								<th><p>Liabilities</p></th>
+								<th><p>Amount</p></th>
+								<th><p>Assets</p></th>
+								<th><p>Amount</p></th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+				<div class="toolbar_wrapper"><div class="toolbar">
+					<button onclick="show_fy()">
+						<i class="fa-solid fa-house"></i>
+						<small>Home</small>
+					</button>
+					<button onclick="export_bs()">
+						<i class="fa-solid fa-file-export"></i>
+						<small>Export Book</small>
+					</button>
+					<button onclick="
+						bs.style.display='none';
+						ledger.style.display='block';
+					">
+						<i class="fa-solid fa-arrow-left"></i>
+						<small>Back</small>
+					</button>
+				</div></div>
 			</div>
 		</main>
 		<script>
@@ -819,6 +870,7 @@
 				})
 				.catch(error => {alert(error);});
 				fetch_ledger_menu();
+				fetch_bs();
 			};
 			let submit_journal = () => { return new Promise((resolve, reject) => {
 				if (status == "closed" || user_status == "closed") { return resolve(false); }
@@ -858,6 +910,7 @@
 						if (ledger_table.getAttribute('account')) {
 							fetch_ledger_account(ledger_table.getAttribute('account'));
 						}
+						fetch_bs();
 						alert("saved");
 						return resolve(true);
 					}
@@ -911,7 +964,7 @@
 			let fetch_ledger_menu = (ledger_q=null) => {
 				ledger_list.innerHTML = "";
 				ledger_search.querySelector("input").value = "";
-				fetch(`ledger/${journal_form.getAttribute("fy_id")+ ((ledger_q) ? `?ledger_q=${ledger_q}` : "")}`, {method: "GET"})
+				fetch(`/ledger/${journal_form.getAttribute("fy_id")+ ((ledger_q) ? `?ledger_q=${ledger_q}` : "")}`, {method: "GET"})
 				.then(response => response.json())
 				.then(data => {
 					if (data.error) {
@@ -929,6 +982,7 @@
 								<ul class="options" id="options_${row.account}">
 									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'asset', '${row.account}')">+asset</li>
 									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'liability', '${row.account}')">+liability</li>
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'nota', '${row.account}')">+nota</li>
 								</ul>
 							</li>`);
 						}
@@ -943,7 +997,7 @@
 			});
 			let fetch_ledger_account = (account) => {
 				ledger_table.querySelector("tbody").innerHTML = "";
-				fetch(`ledger/${journal_form.getAttribute("fy_id")}?account=${account}`, {method: "GET"})
+				fetch(`/ledger/${journal_form.getAttribute("fy_id")}?account=${account}`, {method: "GET"})
 				.then(response => response.json())
 				.then(data => {
 					if (data.error) {
@@ -1052,7 +1106,7 @@
 					return;
 				}
 				for (let li of ledger_list.children) {
-					let request = fetch(`ledger/${journal_form.getAttribute("fy_id")}?account=${li.innerText}`, {method: "GET"})
+					let request = fetch(`/ledger/${journal_form.getAttribute("fy_id")}?account=${li.innerText}`, {method: "GET"})
 					.then(response => response.json())
 					.then(data => {
 						if (data.error) {
@@ -1110,10 +1164,9 @@
 					return;
 				}
 				let data = new FormData();
-				data.append("fy_id", journal_form.getAttribute("fy_id"));
 				data.append("type", type);
 				data.append("account", account);
-				fetch("/bs", {
+				fetch(`/bs/${journal_form.getAttribute("fy_id")}`, {
 					method: "PATCH",
 					body: data
 				})
@@ -1122,10 +1175,76 @@
 					if (data.error) {
 						alert(data.error);
 					} else if (data.success) {
-						target.innerHTML = (data.type) ? `(${data.type})` : ``;
+						target.innerHTML = (data.type != "nota") ? `(${data.type})` : ``;
+						fetch_bs();
 					}
 				})
 				.catch(error => {alert(error);});
+			};
+			let bs = document.getElementById("bs");
+			let bs_table = document.getElementById("bs_table");
+			let fetch_bs = () => {
+				bs_table.querySelector("tbody").innerHTML = "";
+				fetch(`/bs/${journal_form.getAttribute("fy_id")}`, {method: "GET"})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else {
+						let tbody = bs_table.querySelector("tbody");
+						for (let i=0; i < Math.max(data.assets.length, data.liabilities.length); i++) {
+							tbody.insertAdjacentHTML("beforeend", `<tr>
+								<td onclick="${data.liabilities[i] ? `refer_ledger('${data.liabilities[i].account}')` : ""}"><p>${data.liabilities[i] ? data.liabilities[i].account : ""}</p></td>
+								<td onclick="${data.liabilities[i] ? `refer_ledger('${data.liabilities[i].account}')` : ""}"><p>${data.liabilities[i] ? data.liabilities[i].amount : ""}</p></td>
+								<td onclick="${data.assets[i] ? `refer_ledger('${data.assets[i].account}')` : ""}"><p>${data.assets[i] ? data.assets[i].account : ""}</p></td>
+								<td onclick="${data.assets[i] ? `refer_ledger('${data.assets[i].account}')` : ""}"><p>${data.assets[i] ? data.assets[i].amount : ""}</p></td>
+							</tr>`);
+						}
+						let empty_row = "<tr>"+"<td><p></p></td>".repeat(4)+"</tr>";
+						tbody.insertAdjacentHTML("beforeend", empty_row+`<tr>
+							<td><p></p></td>
+							<td><p>${data.liabilities_total}</p></td>
+							<td><p></p></td>
+							<td><p>${data.assets_total}</p></td>
+						</tr>`);
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let export_bs = async () => {
+				if (!bs_table.querySelector("tbody").children.length) {
+					return;
+				}
+				await fetch(`/bs/${journal_form.getAttribute("fy_id")}`, {method: "GET"})
+				.then(response => response.json())
+				.then(data => {
+					if (data.error) {
+						alert(data.error);
+					} else {
+						let csv = "Liabilities,Amount,Assets,Amount\r\n";
+						for (let i=0; i < Math.max(data.assets.length, data.liabilities.length); i++) {
+							csv += `${(data.liabilities[i]) ? data.liabilities[i].account : ""},${(data.liabilities[i]) ? data.liabilities[i].amount : ""},${(data.assets[i]) ? data.assets[i].account : ""},${(data.assets[i]) ? data.assets[i].amount : ""}\r\n`;
+						}
+						csv += `\r\n,${data.liabilities_total},,${data.assets_total}`;
+						let blob = new Blob([csv], {type: "text/csv"});
+						let url = URL.createObjectURL(blob);
+						let a = document.createElement('a');
+						a.href = url;
+						a.download = `${journal_form.getAttribute("fy_name")}_bs`;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						URL.revokeObjectURL(url);
+					}
+				})
+				.catch(error => {alert(error);});
+			};
+			let refer_ledger = (account) => {
+				bs.style.display = "none";
+				ledger.style.display = "block";
+				ledger_menu.style.display = "none";
+				ledger_account.style.display = "block";
+				fetch_ledger_account(account);
 			};
 		</script>
 	</body>
