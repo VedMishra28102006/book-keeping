@@ -351,52 +351,118 @@ def ledger(id):
 		"total": total
 	}), 200
 
-@accounting.route("/bs", methods=["GET", "PATCH"])
-def bs():
+@accounting.route("/bs/<fy_id>", methods=["GET", "PATCH"])
+def bs(fy_id):
 	signed = check_signed(request.cookies)
 	if not signed:
 		return redirect("/auth")
-	if request.method == "PATCH":
-		required_fields = ["fy_id", "type", "account"]
+	db = sqlite3.connect("data.db")
+	cursor = db.cursor()
+	cursor.row_factory = sqlite3.Row
+	cursor.execute("SELECT id FROM users WHERE token=?", (request.cookies.get("user_token"),))
+	user_id = dict(cursor.fetchone()).get("id")
+	cursor.execute(f"SELECT * FROM fys_{user_id} WHERE id=?", (fy_id,))
+	row = cursor.fetchone()
+	if not row:
+		db.close()
+		return jsonify({"error": "Invalid id"}), 400
+	row = dict(row)
+	status = row.get("status")
+	if signed.get("status") == "closed":
+		db.close()
+		return "", 204
+	if status == "closed":
+		db.close()
+		return "", 204
+	if request.method == "GET":
+		cursor.execute(f"SELECT account FROM bs_{user_id}_{row["id"]} WHERE type=?", ("asset",))
+		assets = cursor.fetchall()
+		assets_total = 0
+		if assets:
+			assets = [dict(row) for row in assets]
+			i = 0
+			assets_len = len(assets)
+			while i < assets_len:
+				account = assets[i].get("account")
+				cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
+				ac_test = cursor.fetchone()
+				if not ac_test:
+					del assets[i]
+					cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))
+					db.commit()
+					assets_len -= 1
+					continue
+				cursor.execute(f"""SELECT
+					COALESCE ((SELECT SUM(amount) FROM journal_{user_id}_{row["id"]} WHERE ac_debited=?), 0)
+					- COALESCE ((SELECT SUM(amount) FROM journal_{user_id}_{row["id"]} WHERE ac_credited=?), 0)
+					AS balance
+				""", (account, account))
+				balance = cursor.fetchone()
+				assets[i]["amount"] = abs(balance["balance"])
+				i += 1
+			if assets:
+				assets_total = sum([row["amount"] for row in assets])
+		cursor.execute(f"SELECT account FROM bs_{user_id}_{row["id"]} WHERE type=?", ("liability",))
+		liabilities = cursor.fetchall()
+		liabilities_total = 0
+		if liabilities:
+			liabilities = [dict(row) for row in liabilities]
+			i = 0
+			liabilities_len = len(liabilities)
+			while i < liabilities_len:
+				account = liabilities[i].get("account")
+				cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
+				ac_test = cursor.fetchone()
+				if not ac_test:
+					del assets[i]
+					cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))
+					db.commit()
+					liabilities_len -= 1
+					continue
+				cursor.execute(f"""SELECT
+					COALESCE ((SELECT SUM(amount) FROM journal_{user_id}_{row["id"]} WHERE ac_debited=?), 0)
+					- COALESCE ((SELECT SUM(amount) FROM journal_{user_id}_{row["id"]} WHERE ac_credited=?), 0)
+					AS balance
+				""", (account, account))
+				balance = cursor.fetchone()
+				if balance:
+					liabilities[i]["amount"] = abs(balance["balance"])
+				i += 1
+			if liabilities:
+				liabilities_total = sum([row["amount"] for row in liabilities])
+		db.close()
+		return jsonify({
+			"assets": assets,
+			"assets_total": assets_total,
+			"liabilities": liabilities,
+			"liabilities_total": liabilities_total
+		}), 200
+	elif request.method == "PATCH":
+		required_fields = ["type", "account"]
 		error = check_fields(request.form, required_fields)
 		if error:
 			db.close()
 			return jsonify(error), 400
-		fy_id = request.form.get("fy_id").strip()
 		type = request.form.get("type").strip()
 		account = request.form.get("account").strip()
-		db = sqlite3.connect("data.db")
-		cursor = db.cursor()
-		cursor.row_factory = sqlite3.Row
-		cursor.execute("SELECT id FROM users WHERE token=?", (request.cookies.get("user_token"),))
-		user_id = dict(cursor.fetchone()).get("id")
-		cursor.execute(f"SELECT * FROM fys_{user_id} WHERE id=?", (fy_id,))
-		row = cursor.fetchone()
-		if not row:
-			db.close()
-			return jsonify({"error": "Invalid id"}), 400
-		row = dict(row)
-		status = row.get("status")
-		if signed.get("status") == "closed":
-			db.close()
-			return "", 204
-		if status == "closed":
-			db.close()
-			return "", 204
-		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=?", (account, account))
-		rows = cursor.fetchall()
-		if not rows:
+		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
+		ac_test = cursor.fetchone()
+		if not ac_test:
 			db.close()
 			return jsonify({"error": "Invalid account"}), 400
 		cursor.execute(f"SELECT * FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))
 		bs = cursor.fetchone()
 		if bs:
-			if bs["type"] == type:
+			if type == "nota":
+				cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))	
+			elif bs["type"] == type:
 				db.close()
 				return "", 204
-			cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET type=? WHERE account=?", (type, account))
+			else:
+				cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET type=? WHERE account=?", (type, account))
 		else:
-			cursor.execute(f"INSERT INTO bs_{user_id}_{row.get("id")} (account, type) VALUES(?, ?)", (account, type))
+			if type != "nota":
+				cursor.execute(f"INSERT INTO bs_{user_id}_{row.get("id")} (account, type) VALUES(?, ?)", (account, type))
 		db.commit()
 		db.close()
 		return jsonify({
