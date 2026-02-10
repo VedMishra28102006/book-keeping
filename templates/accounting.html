@@ -476,9 +476,9 @@
 					<table>
 						<thead>
 							<tr>
-								<th><p>Liabilities</p></th>
-								<th><p>Amount</p></th>
 								<th><p>Assets</p></th>
+								<th><p>Amount</p></th>
+								<th><p>Liabilities</p></th>
 								<th><p>Amount</p></th>
 							</tr>
 						</thead>
@@ -977,12 +977,21 @@
 								fetch_ledger_account('${row.account}');
 							">
 								<p>${row.account}</p>
-								<p>${(row.type) ? `(${row.type})` : ""}</p>
+								<p>${(row.type) ? `(${row.type})(${row.subtype})` : ""}</p>
 								<button class="options_button" onclick="event.stopPropagation();showOptions('_${row.account}');">&vellip;</button>
 								<ul class="options" id="options_${row.account}">
-									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'asset', '${row.account}')">+asset</li>
-									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'liability', '${row.account}')">+liability</li>
-									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'nota', '${row.account}')">+nota</li>
+									<li onclick="event.stopPropagation();this.parentNode.classList.remove('visible');options_asset_${row.account}.classList.add('visible');">+asset</li>
+									<li onclick="event.stopPropagation();this.parentNode.classList.remove('visible');options_liability_${row.account}.classList.add('visible');">+liability</li>
+									<li onclick="event.stopPropagation();this.parentNode.classList.remove('visible');to_bs(this.parentNode.parentNode.children[1], 'nota', 'nota', '${row.account}')">+nota</li>
+								</ul>
+								<ul class="options" id="options_asset_${row.account}">
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'asset', 'current', '${row.account}')">+current</li>
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'asset', 'noncurrent', '${row.account}')">+noncurrent</li>
+								</ul>
+								<ul class="options" id="options_liability_${row.account}">
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'liability', 'current', '${row.account}')">+current</li>
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'liability', 'noncurrent', '${row.account}')">+noncurrent</li>
+									<li onclick="event.stopPropagation();to_bs(this.parentNode.parentNode.children[1], 'liability', 'equity', '${row.account}')">+equity</li>
 								</ul>
 							</li>`);
 						}
@@ -1154,17 +1163,20 @@
 					saveAs(content, `${journal_form.getAttribute("fy_name")}_ledgers.zip`);
 				});
 			};
-			let to_bs = (target, type, account) => {
-				document.getElementById(`options_${account}`).classList.remove("visible");
+			let to_bs = (target, type, subtype, account) => {
+				if (type != "nota") {
+					document.getElementById(`options_${type}_${account}`).classList.remove("visible");
+				}
 				if (user_status == "closed") {
 					alert("Your account has been closed");
 					return;
 				}
-				if (target.innerText == `(${type})`) {
+				if (target.innerText == `(${type})(${subtype})`) {
 					return;
 				}
 				let data = new FormData();
 				data.append("type", type);
+				data.append("subtype", subtype);
 				data.append("account", account);
 				fetch(`/bs/${journal_form.getAttribute("fy_id")}`, {
 					method: "PATCH",
@@ -1175,7 +1187,7 @@
 					if (data.error) {
 						alert(data.error);
 					} else if (data.success) {
-						target.innerHTML = (data.type != "nota") ? `(${data.type})` : ``;
+						target.innerHTML = (data.type != "nota") ? `(${data.type})(${data.subtype})` : ``;
 						fetch_bs();
 					}
 				})
@@ -1192,20 +1204,64 @@
 						alert(data.error);
 					} else {
 						let tbody = bs_table.querySelector("tbody");
-						for (let i=0; i < Math.max(data.assets.length, data.liabilities.length); i++) {
+						tbody.insertAdjacentHTML("beforeend", `<tr>
+							<td colspan="2"><p>Current Assets:</p></td>
+							<td colspan="2"><p>Current Liabilities:</p></td>
+						</tr>`);
+						let empty_row = "<tr>"+"<td><p></p></td>".repeat(4)+"</tr>";
+						for (let i=0; i < Math.max(data.assets.current.length, data.liabilities.current.length); i++) {
 							tbody.insertAdjacentHTML("beforeend", `<tr>
-								<td onclick="${data.liabilities[i] ? `refer_ledger('${data.liabilities[i].account}')` : ""}"><p>${data.liabilities[i] ? data.liabilities[i].account : ""}</p></td>
-								<td onclick="${data.liabilities[i] ? `refer_ledger('${data.liabilities[i].account}')` : ""}"><p>${data.liabilities[i] ? data.liabilities[i].amount : ""}</p></td>
-								<td onclick="${data.assets[i] ? `refer_ledger('${data.assets[i].account}')` : ""}"><p>${data.assets[i] ? data.assets[i].account : ""}</p></td>
-								<td onclick="${data.assets[i] ? `refer_ledger('${data.assets[i].account}')` : ""}"><p>${data.assets[i] ? data.assets[i].amount : ""}</p></td>
+								<td onclick="${data.assets.current[i] ? `refer_ledger('${data.assets.current[i].account}')` : ""}"><p>${data.assets.current[i] ? data.assets.current[i].account : ""}</p></td>
+								<td onclick="${data.assets.current[i] ? `refer_ledger('${data.assets.current[i].account}')` : ""}"><p>${data.assets.current[i] ? data.assets.current[i].amount : ""}</p></td>
+								<td onclick="${data.liabilities.current[i] ? `refer_ledger('${data.liabilities.current[i].account}')` : ""}"><p>${data.liabilities.current[i] ? data.liabilities.current[i].account : ""}</p></td>
+								<td onclick="${data.liabilities.current[i] ? `refer_ledger('${data.liabilities.current[i].account}')` : ""}"><p>${data.liabilities.current[i] ? data.liabilities.current[i].amount : ""}</p></td>
 							</tr>`);
 						}
-						let empty_row = "<tr>"+"<td><p></p></td>".repeat(4)+"</tr>";
 						tbody.insertAdjacentHTML("beforeend", empty_row+`<tr>
-							<td><p></p></td>
-							<td><p>${data.liabilities_total}</p></td>
-							<td><p></p></td>
-							<td><p>${data.assets_total}</p></td>
+							<td><p>Total current assets</p></td>
+							<td><p>${data.assets.current_total}</p></td>
+							<td><p>Total current liabilities</p></td>
+							<td><p>${data.liabilities.current_total}</p></td>
+						</tr>`+empty_row);
+						tbody.insertAdjacentHTML("beforeend", `<tr>
+							<td colspan="2"><p>Non-Current Assets:</p></td>
+							<td colspan="2"><p>Non-Current Liabilities:</p></td>
+						</tr>`);
+						for (let i=0; i < Math.max(data.assets.noncurrent.length, data.liabilities.noncurrent.length); i++) {
+							tbody.insertAdjacentHTML("beforeend", `<tr>
+								<td onclick="${data.assets.noncurrent[i] ? `refer_ledger('${data.assets.noncurrent[i].account}')` : ""}"><p>${data.assets.noncurrent[i] ? data.assets.noncurrent[i].account : ""}</p></td>
+								<td onclick="${data.assets.noncurrent[i] ? `refer_ledger('${data.assets.noncurrent[i].account}')` : ""}"><p>${data.assets.noncurrent[i] ? data.assets.noncurrent[i].amount : ""}</p></td>
+								<td onclick="${data.liabilities.noncurrent[i] ? `refer_ledger('${data.liabilities.noncurrent[i].account}')` : ""}"><p>${data.liabilities.noncurrent[i] ? data.liabilities.noncurrent[i].account : ""}</p></td>
+								<td onclick="${data.liabilities.noncurrent[i] ? `refer_ledger('${data.liabilities.noncurrent[i].account}')` : ""}"><p>${data.liabilities.noncurrent[i] ? data.liabilities.noncurrent[i].amount : ""}</p></td>
+							</tr>`);
+						}
+						tbody.insertAdjacentHTML("beforeend", empty_row+`<tr>
+							<td><p>Total non-current assets</p></td>
+							<td><p>${data.assets.noncurrent_total}</p></td>
+							<td><p>Total non-current liabilities</p></td>
+							<td><p>${data.liabilities.noncurrent_total}</p></td>
+						</tr>`+empty_row);
+						tbody.insertAdjacentHTML("beforeend", `<tr>
+							<td colspan="2"><p></p></td>
+							<td colspan="2"><p>Shareholders' Equity:</p></td>
+						</tr>`);
+						for (let i=0; i < data.liabilities.equity.length; i++) {
+							tbody.insertAdjacentHTML("beforeend", `<tr>
+								<td colspan="2"><p></p></td>
+								<td onclick="${data.liabilities.equity[i] ? `refer_ledger('${data.liabilities.equity[i].account}')` : ""}"><p>${data.liabilities.equity[i] ? data.liabilities.equity[i].account : ""}</p></td>
+								<td onclick="${data.liabilities.equity[i] ? `refer_ledger('${data.liabilities.equity[i].account}')` : ""}"><p>${data.liabilities.equity[i] ? data.liabilities.equity[i].amount : ""}</p></td>
+							</tr>`);
+						}
+						tbody.insertAdjacentHTML("beforeend", empty_row+`<tr>
+							<td colspan="2"><p></p></td>
+							<td><p>Total shareholders' equity</p></td>
+							<td><p>${data.liabilities.equity_total}</p></td>
+						</tr>`+empty_row);
+						tbody.insertAdjacentHTML("beforeend", `<tr>
+							<td><p>Total assets</p></td>
+							<td><p>${data.assets.total}</p></td>
+							<td><p>Total liabilities</p></td>
+							<td><p>${data.liabilities.total}</p></td>
 						</tr>`);
 					}
 				})
@@ -1221,11 +1277,23 @@
 					if (data.error) {
 						alert(data.error);
 					} else {
-						let csv = "Liabilities,Amount,Assets,Amount\r\n";
-						for (let i=0; i < Math.max(data.assets.length, data.liabilities.length); i++) {
-							csv += `${(data.liabilities[i]) ? data.liabilities[i].account : ""},${(data.liabilities[i]) ? data.liabilities[i].amount : ""},${(data.assets[i]) ? data.assets[i].account : ""},${(data.assets[i]) ? data.assets[i].amount : ""}\r\n`;
+						let csv = "Assets,Amount,Liabilities,Amount\r\n";
+						csv += "Current Assets:,,Current Liabilities:,\r\n";
+						for (let i=0; i < Math.max(data.assets.current.length, data.liabilities.current.length); i++) {
+							csv += `${(data.assets.current[i]) ? data.assets.current[i].account : ""},${(data.assets.current[i]) ? data.assets.current[i].amount : ""},${(data.liabilities.current[i]) ? data.liabilities.current[i].account : ""},${(data.liabilities.current[i]) ? data.liabilities.current[i].amount : ""}\r\n`;
 						}
-						csv += `\r\n,${data.liabilities_total},,${data.assets_total}`;
+						csv += `\r\nTotal current assets,${data.assets.current_total},Total current liabilities,${data.liabilities.current_total}\r\n`;
+						csv += "\r\nNon-Current Assets:,,Non-Current Liabilities:,\r\n";
+						for (let i=0; i < Math.max(data.assets.noncurrent.length, data.liabilities.noncurrent.length); i++) {
+							csv += `${(data.assets.noncurrent[i]) ? data.assets.noncurrent[i].account : ""},${(data.assets.noncurrent[i]) ? data.assets.noncurrent[i].amount : ""},${(data.liabilities.noncurrent[i]) ? data.liabilities.noncurrent[i].account : ""},${(data.liabilities.noncurrent[i]) ? data.liabilities.noncurrent[i].amount : ""}\r\n`;
+						}
+						csv += `\r\nTotal non-current assets,${data.assets.noncurrent_total},Total non-current liabilities,${data.liabilities.noncurrent_total}\r\n`;
+						csv += "\r\n,,Shareholders' Equity:,\r\n";
+						for (let i=0; i < data.liabilities.equity.length; i++) {
+							csv += `,,${(data.liabilities.equity[i]) ? data.liabilities.equity[i].account : ""},${(data.liabilities.equity[i]) ? data.liabilities.equity[i].amount : ""}\r\n`;
+						}
+						csv += `\r\n,,Total shareholders' equity,${data.liabilities.equity_total}\r\n`;
+						csv += `\r\nTotal assets,${data.assets.total},Total liabilities,${data.liabilities.total}`;
 						let blob = new Blob([csv], {type: "text/csv"});
 						let url = URL.createObjectURL(blob);
 						let a = document.createElement('a');
