@@ -88,7 +88,8 @@ def fy():
 		cursor.execute(f"""CREATE TABLE IF NOT EXISTS bs_{user_id}_{row.get("id")} (
 			id INTEGER PRIMARY KEY UNIQUE NOT NULL,
 			account TEXT NOT NULL,
-			type TEXT NOT NULL
+			type TEXT NOT NULL,
+			subtype TEXT NOT NULL
 		)""")
 		db.commit()
 		db.close()
@@ -307,9 +308,11 @@ def ledger(id):
 			for j in range(len(bss)):
 				if rows[i].get("account") == bss[j].get("account"):
 					rows[i]["type"] = bss[j].get("type")
+					rows[i]["subtype"] = bss[j].get("subtype")
 					break
 			if not rows[i].get("type"):
 				rows[i]["type"] = None
+				rows[i]["subtype"] = None
 			rows[i]["id"] = i
 		db.close()
 		return jsonify(rows), 200
@@ -375,9 +378,13 @@ def bs(fy_id):
 		db.close()
 		return "", 204
 	if request.method == "GET":
-		cursor.execute(f"SELECT account FROM bs_{user_id}_{row["id"]} WHERE type=?", ("asset",))
+		cursor.execute(f"SELECT account, subtype FROM bs_{user_id}_{row["id"]} WHERE type=?", ("asset",))
 		assets = cursor.fetchall()
 		assets_total = 0
+		current_assets = []
+		current_assets_total = 0
+		noncurrent_assets = []
+		noncurrent_assets_total = 0
 		if assets:
 			assets = [dict(row) for row in assets]
 			i = 0
@@ -399,12 +406,33 @@ def bs(fy_id):
 				""", (account, account))
 				balance = cursor.fetchone()
 				assets[i]["amount"] = abs(balance["balance"])
+				if assets[i].get("subtype") == "current":
+					current_assets.append(assets[i])
+				else:
+					noncurrent_assets.append(assets[i])
 				i += 1
+			if current_assets:
+				current_assets_total = sum([row["amount"] for row in current_assets])
+			if noncurrent_assets:
+				noncurrent_assets_total = sum([row["amount"] for row in noncurrent_assets])
 			if assets:
-				assets_total = sum([row["amount"] for row in assets])
-		cursor.execute(f"SELECT account FROM bs_{user_id}_{row["id"]} WHERE type=?", ("liability",))
+				assets_total = current_assets_total + noncurrent_assets_total
+		assets = {
+			"current": current_assets,
+			"current_total": current_assets_total,
+			"noncurrent": noncurrent_assets,
+			"noncurrent_total": noncurrent_assets_total,
+			"total": assets_total
+		}
+		cursor.execute(f"SELECT account, subtype FROM bs_{user_id}_{row["id"]} WHERE type=?", ("liability",))
 		liabilities = cursor.fetchall()
 		liabilities_total = 0
+		current_liabilities = []
+		current_liabilities_total = 0
+		noncurrent_liabilities = []
+		noncurrent_liabilities_total = 0
+		equity = []
+		equity_total = 0
 		if liabilities:
 			liabilities = [dict(row) for row in liabilities]
 			i = 0
@@ -425,25 +453,54 @@ def bs(fy_id):
 					AS balance
 				""", (account, account))
 				balance = cursor.fetchone()
-				if balance:
-					liabilities[i]["amount"] = abs(balance["balance"])
+				liabilities[i]["amount"] = abs(balance["balance"])
+				if liabilities[i].get("subtype") == "current":
+					current_liabilities.append(liabilities[i])
+				elif liabilities[i].get("subtype") == "noncurrent":
+					noncurrent_liabilities.append(liabilities[i])
+				else:
+					equity.append(liabilities[i])
 				i += 1
+			if current_liabilities:
+				current_liabilities_total = sum([row["amount"] for row in current_liabilities])
+			if noncurrent_assets:
+				noncurrent_liabilities_total = sum([row["amount"] for row in noncurrent_liabilities])
+			if equity:
+				equity_total = sum([row["amount"] for row in equity])
 			if liabilities:
-				liabilities_total = sum([row["amount"] for row in liabilities])
+				liabilities_total = current_liabilities_total + noncurrent_liabilities_total + equity_total
+		liabilities = {
+			"current": current_liabilities,
+			"current_total": current_liabilities_total,
+			"noncurrent": noncurrent_liabilities,
+			"noncurrent_total": noncurrent_liabilities_total,
+			"equity": equity,
+			"equity_total": equity_total,
+			"total": liabilities_total
+		}
 		db.close()
 		return jsonify({
 			"assets": assets,
-			"assets_total": assets_total,
-			"liabilities": liabilities,
-			"liabilities_total": liabilities_total
+			"liabilities": liabilities
 		}), 200
 	elif request.method == "PATCH":
-		required_fields = ["type", "account"]
+		required_fields = ["type", "subtype", "account"]
 		error = check_fields(request.form, required_fields)
 		if error:
 			db.close()
 			return jsonify(error), 400
 		type = request.form.get("type").strip()
+		required_types = ["asset", "liability", "nota"]
+		if type not in required_types:
+			db.close()
+			return jsonify({"error": "Invalid type"}), 400
+
+		subtype = request.form.get("subtype").strip()
+		required_subtypes = ["current", "noncurrent", "equity"]
+		if type != "nota" and (subtype not in required_subtypes or (type == "asset" and subtype == "equity")):
+			db.close()
+			return jsonify({"error": "Invalid subtype"}), 400
+
 		account = request.form.get("account").strip()
 		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
 		ac_test = cursor.fetchone()
@@ -455,17 +512,18 @@ def bs(fy_id):
 		if bs:
 			if type == "nota":
 				cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))	
-			elif bs["type"] == type:
+			elif bs["type"] == type and bs["subtype"] == subtype:
 				db.close()
 				return "", 204
 			else:
-				cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET type=? WHERE account=?", (type, account))
+				cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET type=?, subtype=? WHERE account=?", (type, subtype, account))
 		else:
 			if type != "nota":
-				cursor.execute(f"INSERT INTO bs_{user_id}_{row.get("id")} (account, type) VALUES(?, ?)", (account, type))
+				cursor.execute(f"INSERT INTO bs_{user_id}_{row.get("id")} (account, type, subtype) VALUES(?, ?, ?)", (account, type, subtype))
 		db.commit()
 		db.close()
 		return jsonify({
 			"success": 1,
-			"type": type
+			"type": type,
+			"subtype": subtype
 		}), 200
