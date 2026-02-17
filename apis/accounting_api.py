@@ -273,7 +273,7 @@ def journal(id):
 		db.close()
 		return jsonify({"success": 1}), 200
 
-@accounting.route("/ledger/<id>", methods=["DELETE", "GET", "PATCH"])
+@accounting.route("/ledger/<id>", methods=["GET"])
 def ledger(id):
 	if not check_signed(request.cookies):
 		return redirect("/auth")
@@ -357,38 +357,6 @@ def ledger(id):
 			"balance_side": balance_side,
 			"balance": abs(balance),
 			"total": total
-		}), 200
-	elif request.method == "DELETE":
-		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
-		ac_test = cursor.fetchone()
-		if not ac_test:
-			db.close()
-			return jsonify({"error": "Invalid account"}), 400
-		cursor.execute(f"DELETE FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=?", (account, account))
-		db.commit()
-		db.close()
-		return jsonify({"success": 1}), 200 
-	elif request.method == "PATCH":
-		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
-		ac_test = cursor.fetchone()
-		if not ac_test:
-			db.close()
-			return jsonify({"error": "Invalid account"}), 400
-		new_name = request.form.get("new_name")
-		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (new_name, new_name))
-		ac_test = cursor.fetchone()
-		act = "remove" if ac_test else "rename"
-		cursor.execute(f"UPDATE journal_{user_id}_{row.get("id")} SET ac_credited=? WHERE ac_credited=? AND ac_debited!=?", (new_name,account,new_name))
-		cursor.execute(f"UPDATE journal_{user_id}_{row.get("id")} SET ac_debited=? WHERE ac_debited=? AND ac_credited!=?", (new_name,account,new_name))
-		if act == "rename":
-			cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET account=? WHERE account=?", (new_name, account))
-		else:
-			cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))
-		db.commit()
-		db.close()
-		return jsonify({
-			"success": 1,
-			"act": act
 		}), 200
 
 @accounting.route("/bs/<fy_id>", methods=["GET", "PATCH"])
