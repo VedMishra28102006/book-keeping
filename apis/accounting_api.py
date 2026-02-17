@@ -89,7 +89,8 @@ def fy():
 			id INTEGER PRIMARY KEY UNIQUE NOT NULL,
 			account TEXT NOT NULL,
 			type TEXT NOT NULL,
-			subtype TEXT NOT NULL
+			subtype TEXT NOT NULL,
+			operation TEXT NOT NULL
 		)""")
 		db.commit()
 		db.close()
@@ -272,7 +273,7 @@ def journal(id):
 		db.close()
 		return jsonify({"success": 1}), 200
 
-@accounting.route("/ledger/<id>", methods=["GET"])
+@accounting.route("/ledger/<id>", methods=["DELETE", "GET", "PATCH"])
 def ledger(id):
 	if not check_signed(request.cookies):
 		return redirect("/auth")
@@ -286,73 +287,109 @@ def ledger(id):
 	if not row:
 		db.close()
 		return jsonify({"error": "Invalid id"}), 400
+	row = dict(row)
 	account = request.args.get("account")
-	if not account:
-		cursor.execute(f"""
-			SELECT ac_debited AS account FROM journal_{user_id}_{row["id"]}
-			UNION SELECT ac_credited AS account FROM journal_{user_id}_{row["id"]}
-		""")
-		rows = cursor.fetchall()
-		rows = [dict(row) for row in rows]
-		ledger_q = request.args.get("ledger_q")
-		if rows and ledger_q:
-			vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4))
-			tfidf_matrix = vectorizer.fit_transform([row["account"].lower() for row in rows])
-			query_vec = vectorizer.transform([ledger_q.strip().lower()])
-			sim_scores = cosine_similarity(query_vec, tfidf_matrix).flatten()
-			rows = [rows[i] for i in sim_scores.argsort()[::-1] if sim_scores[i] >= 0.3]
-		cursor.execute(f"SELECT * FROM bs_{user_id}_{row["id"]}")
-		bss = cursor.fetchall()
-		bss = [dict(bs) for bs in bss]
-		for i in range(len(rows)):
-			for j in range(len(bss)):
-				if rows[i].get("account") == bss[j].get("account"):
-					rows[i]["type"] = bss[j].get("type")
-					rows[i]["subtype"] = bss[j].get("subtype")
-					break
-			if not rows[i].get("type"):
-				rows[i]["type"] = None
-				rows[i]["subtype"] = None
-			rows[i]["id"] = i
+	if request.method == "GET":
+		if not account:
+			cursor.execute(f"""
+				SELECT ac_debited AS account FROM journal_{user_id}_{row["id"]}
+				UNION SELECT ac_credited AS account FROM journal_{user_id}_{row["id"]}
+			""")
+			rows = cursor.fetchall()
+			rows = [dict(row) for row in rows]
+			ledger_q = request.args.get("ledger_q")
+			if rows and ledger_q:
+				vectorizer = TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 4))
+				tfidf_matrix = vectorizer.fit_transform([row["account"].lower() for row in rows])
+				query_vec = vectorizer.transform([ledger_q.strip().lower()])
+				sim_scores = cosine_similarity(query_vec, tfidf_matrix).flatten()
+				rows = [rows[i] for i in sim_scores.argsort()[::-1] if sim_scores[i] >= 0.3]
+			cursor.execute(f"SELECT * FROM bs_{user_id}_{row["id"]}")
+			bss = cursor.fetchall()
+			bss = [dict(bs) for bs in bss]
+			for i in range(len(rows)):
+				for j in range(len(bss)):
+					if rows[i].get("account") == bss[j].get("account"):
+						rows[i]["operation"] = bss[j].get("operation")
+						rows[i]["type"] = bss[j].get("type")
+						rows[i]["subtype"] = bss[j].get("subtype")
+						break
+				if not rows[i].get("operation") or not rows[i].get("type") or not rows[i].get("subtype"):
+					rows[i]["operation"] = None
+					rows[i]["type"] = None
+					rows[i]["subtype"] = None
+				rows[i]["id"] = i
+			db.close()
+			return jsonify(rows), 200
+		balance = 0
+		cursor.execute(f"SELECT id,date,ac_credited AS account,amount FROM journal_{user_id}_{row["id"]} WHERE ac_debited=?", (account,))
+		debit_side = cursor.fetchall()
+		debit_total = 0
+		if debit_side:
+			debit_side = [dict(row) for row in debit_side]
+			debit_total = sum([row["amount"] for row in debit_side])
+			balance += debit_total
+		cursor.execute(f"SELECT id,date,ac_debited AS account,amount FROM journal_{user_id}_{row["id"]} WHERE ac_credited=?", (account,))
+		credit_side = cursor.fetchall()
+		credit_total = 0
+		if credit_side:
+			credit_side = [dict(row) for row in credit_side]
+			credit_total = sum([row["amount"] for row in credit_side])
+			balance -= credit_total
 		db.close()
-		return jsonify(rows), 200
-	balance = 0
-	cursor.execute(f"SELECT id,date,ac_credited AS account,amount FROM journal_{user_id}_{row["id"]} WHERE ac_debited=?", (account,))
-	debit_side = cursor.fetchall()
-	debit_total = 0
-	if debit_side:
-		debit_side = [dict(row) for row in debit_side]
-		debit_total = sum([row["amount"] for row in debit_side])
-		balance += debit_total
-	cursor.execute(f"SELECT id,date,ac_debited AS account,amount FROM journal_{user_id}_{row["id"]} WHERE ac_credited=?", (account,))
-	credit_side = cursor.fetchall()
-	credit_total = 0
-	if credit_side:
-		credit_side = [dict(row) for row in credit_side]
-		credit_total = sum([row["amount"] for row in credit_side])
-		balance -= credit_total
-	db.close()
-	if not debit_side and not credit_side:
-		return jsonify({"error": "invalid account"}), 400
-	balance_side = None
-	if balance > 0:
-		balance_side = "credit_side"
-	if balance < 0:
-		balance_side = "debit_side"
-	total = 0
-	if debit_total and credit_total:
-		total = debit_total if debit_total > credit_total else credit_total
-	if not debit_total:
-		total = credit_total
-	if not credit_total:
-		total = debit_total
-	return jsonify({
-		"debit_side": debit_side,
-		"credit_side": credit_side,
-		"balance_side": balance_side,
-		"balance": abs(balance),
-		"total": total
-	}), 200
+		if not debit_side and not credit_side:
+			return jsonify({"error": "invalid account"}), 400
+		balance_side = None
+		if balance > 0:
+			balance_side = "credit_side"
+		if balance < 0:
+			balance_side = "debit_side"
+		total = 0
+		if debit_total and credit_total:
+			total = debit_total if debit_total > credit_total else credit_total
+		if not debit_total:
+			total = credit_total
+		if not credit_total:
+			total = debit_total
+		return jsonify({
+			"debit_side": debit_side,
+			"credit_side": credit_side,
+			"balance_side": balance_side,
+			"balance": abs(balance),
+			"total": total
+		}), 200
+	elif request.method == "DELETE":
+		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
+		ac_test = cursor.fetchone()
+		if not ac_test:
+			db.close()
+			return jsonify({"error": "Invalid account"}), 400
+		cursor.execute(f"DELETE FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=?", (account, account))
+		db.commit()
+		db.close()
+		return jsonify({"success": 1}), 200 
+	elif request.method == "PATCH":
+		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
+		ac_test = cursor.fetchone()
+		if not ac_test:
+			db.close()
+			return jsonify({"error": "Invalid account"}), 400
+		new_name = request.form.get("new_name")
+		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (new_name, new_name))
+		ac_test = cursor.fetchone()
+		act = "remove" if ac_test else "rename"
+		cursor.execute(f"UPDATE journal_{user_id}_{row.get("id")} SET ac_credited=? WHERE ac_credited=? AND ac_debited!=?", (new_name,account,new_name))
+		cursor.execute(f"UPDATE journal_{user_id}_{row.get("id")} SET ac_debited=? WHERE ac_debited=? AND ac_credited!=?", (new_name,account,new_name))
+		if act == "rename":
+			cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET account=? WHERE account=?", (new_name, account))
+		else:
+			cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))
+		db.commit()
+		db.close()
+		return jsonify({
+			"success": 1,
+			"act": act
+		}), 200
 
 @accounting.route("/bs/<fy_id>", methods=["GET", "PATCH"])
 def bs(fy_id):
@@ -378,7 +415,7 @@ def bs(fy_id):
 		db.close()
 		return "", 204
 	if request.method == "GET":
-		cursor.execute(f"SELECT account, subtype FROM bs_{user_id}_{row["id"]} WHERE type=?", ("asset",))
+		cursor.execute(f"SELECT account, operation, subtype FROM bs_{user_id}_{row["id"]} WHERE type=?", ("asset",))
 		assets = cursor.fetchall()
 		assets_total = 0
 		current_assets = []
@@ -412,9 +449,9 @@ def bs(fy_id):
 					noncurrent_assets.append(assets[i])
 				i += 1
 			if current_assets:
-				current_assets_total = sum([row["amount"] for row in current_assets])
+				current_assets_total = sum([row["amount"] for row in current_assets if row["operation"] == "add"]) - sum([row["amount"] for row in current_assets if row["operation"] == "less"])
 			if noncurrent_assets:
-				noncurrent_assets_total = sum([row["amount"] for row in noncurrent_assets])
+				noncurrent_assets_total = sum([row["amount"] for row in noncurrent_assets if row["operation"] == "add"]) - sum([row["amount"] for row in noncurrent_assets if row["operation"] == "less"])
 			if assets:
 				assets_total = current_assets_total + noncurrent_assets_total
 		assets = {
@@ -424,7 +461,7 @@ def bs(fy_id):
 			"noncurrent_total": noncurrent_assets_total,
 			"total": assets_total
 		}
-		cursor.execute(f"SELECT account, subtype FROM bs_{user_id}_{row["id"]} WHERE type=?", ("liability",))
+		cursor.execute(f"SELECT account, operation, subtype FROM bs_{user_id}_{row["id"]} WHERE type=?", ("liability",))
 		liabilities = cursor.fetchall()
 		liabilities_total = 0
 		current_liabilities = []
@@ -442,7 +479,7 @@ def bs(fy_id):
 				cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
 				ac_test = cursor.fetchone()
 				if not ac_test:
-					del assets[i]
+					del liabilities[i]
 					cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))
 					db.commit()
 					liabilities_len -= 1
@@ -462,11 +499,11 @@ def bs(fy_id):
 					equity.append(liabilities[i])
 				i += 1
 			if current_liabilities:
-				current_liabilities_total = sum([row["amount"] for row in current_liabilities])
-			if noncurrent_assets:
-				noncurrent_liabilities_total = sum([row["amount"] for row in noncurrent_liabilities])
+				current_liabilities_total = sum([row["amount"] for row in current_liabilities if row["operation"] == "add"]) - sum([row["amount"] for row in current_liabilities if row["operation"] == "less"])
+			if noncurrent_liabilities:
+				noncurrent_liabilities_total = sum([row["amount"] for row in noncurrent_liabilities if row["operation"] == "add"]) - sum([row["amount"] for row in noncurrent_liabilities if row["operation"] == "less"])
 			if equity:
-				equity_total = sum([row["amount"] for row in equity])
+				equity_total = sum([row["amount"] for row in equity if row["operation"] == "add"]) - sum([row["amount"] for row in equity if row["operation"] == "less"])
 			if liabilities:
 				liabilities_total = current_liabilities_total + noncurrent_liabilities_total + equity_total
 		liabilities = {
@@ -500,7 +537,11 @@ def bs(fy_id):
 		if type != "nota" and (subtype not in required_subtypes or (type == "asset" and subtype == "equity")):
 			db.close()
 			return jsonify({"error": "Invalid subtype"}), 400
-
+		operation = request.form.get("operation").strip()
+		required_operations = ["add", "less"]
+		if type != "nota" and operation not in required_operations:
+			db.close()
+			return jsonify({"error": "Invalid operation"}), 400
 		account = request.form.get("account").strip()
 		cursor.execute(f"SELECT * FROM journal_{user_id}_{row.get("id")} WHERE ac_credited=? OR ac_debited=? LIMIT 1", (account, account))
 		ac_test = cursor.fetchone()
@@ -512,18 +553,19 @@ def bs(fy_id):
 		if bs:
 			if type == "nota":
 				cursor.execute(f"DELETE FROM bs_{user_id}_{row.get("id")} WHERE account=?", (account,))	
-			elif bs["type"] == type and bs["subtype"] == subtype:
+			elif bs["type"] == type and bs["subtype"] == subtype and bs["operation"] == operation:
 				db.close()
 				return "", 204
 			else:
-				cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET type=?, subtype=? WHERE account=?", (type, subtype, account))
+				cursor.execute(f"UPDATE bs_{user_id}_{row.get("id")} SET type=?, subtype=?, operation=? WHERE account=?", (type, subtype, operation, account))
 		else:
 			if type != "nota":
-				cursor.execute(f"INSERT INTO bs_{user_id}_{row.get("id")} (account, type, subtype) VALUES(?, ?, ?)", (account, type, subtype))
+				cursor.execute(f"INSERT INTO bs_{user_id}_{row.get("id")} (account, type, subtype, operation) VALUES(?, ?, ?, ?)", (account, type, subtype, operation))
 		db.commit()
 		db.close()
 		return jsonify({
 			"success": 1,
 			"type": type,
-			"subtype": subtype
+			"subtype": subtype,
+			"operation": operation
 		}), 200
