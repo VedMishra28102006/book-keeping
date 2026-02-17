@@ -1001,16 +1001,6 @@
 						<li onclick="
 							event.stopPropagation();
 							this.parentNode.classList.remove('visible');
-							edit_ledger('${row.id}');
-						">edit</li>
-						<li onclick="
-							event.stopPropagation();
-							this.parentNode.classList.remove('visible');
-							delete_ledger('${row.id}', '${row.account}');
-						">delete</li>
-						<li onclick="
-							event.stopPropagation();
-							this.parentNode.classList.remove('visible');
 							document.getElementById('options_type_${row.account}').classList.add('visible');
 						">To BS</li>
 					</ul>
@@ -1405,68 +1395,6 @@
 				ledger_menu.style.display = "none";
 				ledger_account.style.display = "block";
 				fetch_ledger_account(account);
-			};
-			let edit_ledger = (id) => {
-				if (user_status == "closed") {
-					alert("Your account has been closed");
-					return;
-				} 
-				let l = document.getElementById(`ledger_${id}`);
-				l.innerHTML = `
-					<form onsubmit="event.preventDefault();update_ledger('${id}', '${l.children[0].innerText}')">
-						<input id="ledgerInput${id}" type="text" value="${l.children[0].innerText}">
-						<button type="submit">ok</button>
-					</form>
-				`;
-				l.onclick = null;
-				document.getElementById(`ledgerInput${id}`).focus();
-			};
-			let update_ledger = (id, old_name) => {
-				if (user_status == "closed") {
-					alert("Your account has been closed");
-					return;
-				}
-				let new_name = document.getElementById(`ledgerInput${id}`).value;
-				let data = new FormData();
-				data.append("new_name", new_name);
-				fetch(`/ledger/${journal_form.getAttribute("fy_id")}?account=${old_name}`, {
-					method: "PATCH",
-					body: data
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.error) {
-						alert(data.error);
-					} else if (data.success) {
-						fetch_journal(journal_form.getAttribute("fy_id"));
-						fetch_ledger_menu();
-						fetch_bs();
-					}
-				})
-				.catch(error => {alert(error);});
-			};
-			let delete_ledger = (id, account) => {
-				if (user_status == "closed") {
-					alert("Your account has been closed");
-					return;
-				}
-				let data = new FormData();
-				data.append("account", account);
-				fetch(`/ledger/${journal_form.getAttribute("fy_id")}?account=${account}`, {
-					method: "DELETE",
-					body: data
-				})
-				.then(response => response.json())
-				.then(data => {
-					if (data.error) {
-						alert(data.error);
-					} else if (data.success) {
-						fetch_journal(journal_form.getAttribute("fy_id"));
-						fetch_ledger_menu();
-						fetch_bs();
-					}
-				})
-				.catch(error => {alert(error);});
 			};
 		</script>
 	</body>

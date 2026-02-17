@@ -259,9 +259,6 @@
 					</ul>
 				</li>`;
 			};
-			let optionsVisible = 0;
-			let errorVisible = null;
-			let focused = null;
 			let showOptions = (id) => {
 				let options = document.getElementsByClassName("options");
 				for (option of options) {
@@ -270,14 +267,12 @@
 					}
 				}
 				document.getElementById(`options${id}`).classList.add("visible");
-				optionsVisible = id;
 			};
 			document.addEventListener("click", (event) => {
-				if (optionsVisible) {
-					let options = document.getElementById(`options${optionsVisible}`);
-					if (options) {
-						options.classList.remove("visible");
-						optionsVisible = 0;
+				let options = document.getElementsByClassName("visible");
+				if (options) {
+					for (option of options) {
+						option.classList.remove("visible");
 					}
 				}
 			});
